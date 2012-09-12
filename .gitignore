@@ -1,3 +1,5 @@
 Debug
+*.o
+*.exe
 DistMem.vcxproj
 DistMem.vcxproj.filters
