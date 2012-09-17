@@ -1,33 +1,43 @@
 #ifndef __DIST_FILE_H__
 #define __DIST_FILE_H__
-#include <string>
-#include <fstream>
-#ifdef _WIN32
-#include <fileapi.h>
-#endif
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "distmem.h"
+#define BLOCK_SIZE  512
+#define KEY_LEN     256
+#define MAX_LEN     1   //to save the last block offset
+#define OFFSET      16
+
 class Domain
 {
 public:
-	Domain(std::string &str):name(str){}
-	Domain(const char *str):name(str){}
+	Domain(std::string &str):name(str){
+        dir_path = string(DATA_PATH) +  PATH_SEP + name + PATH_SEP;
+        makeFiles();
+    }
+	Domain(const char *str):name(str){
+        dir_path = string(DATA_PATH) +  PATH_SEP + name + PATH_SEP;
+        makeFiles();
+    }
 	virtual ~Domain(){
-		idxfs->close();
-		biffs->close();
-		dmdfs->close();
+        fclose(biffs);
+        fclose(idxfs);
+        fclose(dmdfs);
 	}
+
 	
-	bool makeFiles() {
-		idxfs = new std::fstream(name + IDX_EXT, std::ios::binary | std::ios::out);
-		biffs = new std::fstream(name + BIF_EXT, std::ios::binary | std::ios::out);
-		dmdfs = new std::fstream(name + DMD_EXT, std::ios::binary | std::ios::out);
-		return true;
-	}
 private:
-	std::string name;
-	std::fstream *idxfs;
-	std::fstream *biffs;
-	std::fstream *dmdfs;
-	
+    FILE *biffs;
+    FILE *idxfs;
+    FILE *dmdfs;
+    string dir_path;
+    string name;
+
+	void makeFiles() {
+        mkdir(dir_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        biffs = fopen((dir_path + name + BIF_EXT).c_str(), "wb");
+        idxfs = fopen((dir_path + name + IDX_EXT).c_str(), "wb");
+        dmdfs = fopen((dir_path + name + DMD_EXT).c_str(), "wb");
+	}
 };
 #endif
