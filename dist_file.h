@@ -47,9 +47,9 @@ private:
             idxfs = fopen(idxpath, "wb+");
             dmdfs = fopen(dmdpath, "wb+");
         } else {
-            biffs = fopen(bifpath, "wb+");
-            idxfs = fopen(idxpath, "wb+");
-            dmdfs = fopen(dmdpath, "wb+");
+            biffs = fopen(bifpath, "rb+");
+            idxfs = fopen(idxpath, "rb+");
+            dmdfs = fopen(dmdpath, "rb+");
         }
         free(idxpath);
         free(bifpath);
@@ -57,15 +57,17 @@ private:
 	}
     uint32_t findUnset() {
         uint32_t indicator;
+        int i = 0;
         while(fread(&indicator, sizeof(indicator), 1, biffs) == 1) {
             if(indicator == 0xffff) break;
         }
         indicator = 0;
         fwrite(&indicator, sizeof(indicator), 1, biffs);
-        return ftell(biffs) - sizeof(indicator);
+        printf("%d\n", ftell(biffs) - sizeof(indicator));
+        return ftell(biffs) / sizeof(indicator) - 1;
     }
     void writeDmd(const byte *data, const size_t length, const uint32_t offset) {
-        fseek(dmdfs, offset, SEEK_SET);
+        fseek(dmdfs, offset * BLOCK_SIZE, SEEK_SET);
         fwrite(data, length, 1, dmdfs);
         fseek(dmdfs, BLOCK_SIZE - length - 1, SEEK_END);
         byte zero = 0;
