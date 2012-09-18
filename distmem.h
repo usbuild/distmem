@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <vector>
 #define DM_NAME     "DistMem"
 #define BIF_EXT     ".bif"
 #define IDX_EXT     ".idx"
@@ -19,8 +20,11 @@
 #define OFFSET      4
 #define IDX_SIZE    sizeof(struct index)
 #define BIF_SIZE    sizeof(uint32_t)
+#define BIF_END     0xfffffffe
+#define BIF_NOT_USE 0xffffffff
 
 using std::string;
+using std::vector;
 extern int errno;
 typedef unsigned char byte;
 struct index{

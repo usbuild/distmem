@@ -21,16 +21,32 @@ public:
         fclose(dmdfs);
     }
     void insert(const char *key, const byte *data, const size_t length){
-        struct index i;
-        i.used = 1;
-        bzero(i.key, KEY_LEN);
-        strcpy(i.key, key);
-        i.length = byte(length % BLOCK_SIZE);
-        i.offset = findUnsetBif();
-        writeDmd(data, length, i.offset);
-        fseek(idxfs, findUnsetIdx() * IDX_SIZE, SEEK_SET);
-        fwrite(&i, IDX_SIZE, 1, idxfs);
+        struct index idx;
+        idx.used = 1;
+        bzero(idx.key, KEY_LEN);
+        strcpy(idx.key, key);
+        idx.length = byte(length % BLOCK_SIZE);
 
+        fseek(idxfs, findUnsetIdx() * IDX_SIZE, SEEK_SET);
+        fwrite(&idx, IDX_SIZE, 1, idxfs);
+        
+        int spice_count = length / BLOCK_SIZE + 1;
+        int i = 0;
+        int final = BIF_END;
+        vector<uint32_t> v;
+        for(i = 0; i < spice_count; i++) {
+            v.push_back(findUnsetBif());
+        }
+        for(i = 0; i < spice_count; i++) {
+            fseek(biffs, BIF_SIZE * v[i], SEEK_SET);
+            if(i == spice_count - 1) {
+                fwrite(&final, BIF_SIZE, 1, biffs);
+            } else {
+                fwrite(&v[i + 1], BIF_SIZE, 1, biffs);
+            }
+        }
+        idx.offset = v[0];
+        writeDmd(data, length, idx.offset);
     }
 
 
@@ -62,6 +78,7 @@ private:
     uint32_t findUnsetIdx() {
         struct index idx;
         int i = 0;
+        fseek(idxfs, 0, SEEK_SET);
         while(fread(&idx, IDX_SIZE, 1, idxfs) == 1) {
             if(idx.used == 0) { 
                 return ftell(idxfs) / IDX_SIZE - 1;
@@ -71,12 +88,18 @@ private:
     }
     uint32_t findUnsetBif() {
         uint32_t indicator;
-        while(fread(&indicator, sizeof(indicator), 1, biffs) == 1) {
-            if(indicator == 0xffff) {
+        uint32_t final = BIF_END;
+        fseek(biffs, 0, SEEK_SET);
+        while(fread(&indicator, BIF_SIZE, 1, biffs) == 1) {
+            if(indicator == BIF_NOT_USE) {
+                fseek(biffs, BIF_SIZE * -1, SEEK_CUR);
+                fwrite(&final, BIF_SIZE, 1, biffs);
                 return ftell(biffs) / BIF_SIZE - 1;
             }
         }
-        return ftell(biffs) / BIF_SIZE;
+        fwrite(&final, BIF_SIZE, 1, biffs);
+        fflush(biffs);
+        return ftell(biffs) / BIF_SIZE - 1;
     }
     void writeDmd(const byte *data, const size_t length, const uint32_t offset) {
         fseek(dmdfs, offset * BLOCK_SIZE, SEEK_SET);
