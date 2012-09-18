@@ -1,5 +1,5 @@
-CXX=clang++
-CFLAGS= -g
+CXX=g++
+CXXFLAGS= -g
 TARGET=distmem
 OBJ=distmem.o 
 $(TARGET): $(OBJ)

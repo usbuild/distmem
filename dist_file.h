@@ -3,27 +3,31 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "distmem.h"
-#define BLOCK_SIZE  512
-#define KEY_LEN     256
-#define MAX_LEN     1   //to save the last block offset
-#define OFFSET      16
 
 class Domain
 {
 public:
 	Domain(std::string &str):name(str){
         dir_path = string(DATA_PATH) +  PATH_SEP + name + PATH_SEP;
-        makeFiles();
+        readFiles();
     }
 	Domain(const char *str):name(str){
         dir_path = string(DATA_PATH) +  PATH_SEP + name + PATH_SEP;
-        makeFiles();
+        readFiles();
     }
 	virtual ~Domain(){
         fclose(biffs);
         fclose(idxfs);
         fclose(dmdfs);
 	}
+    void insert(const char *key, const byte *data, const size_t length){
+        struct index i;
+        i.used = 1;
+        strcpy(i.key, key);
+        i.length = byte(length % BLOCK_SIZE);
+        i.offset = findUnset();
+        writeDmd(data, length, i.offset);
+    }
 
 	
 private:
@@ -33,11 +37,39 @@ private:
     string dir_path;
     string name;
 
-	void makeFiles() {
+	void readFiles() {
         mkdir(dir_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-        biffs = fopen((dir_path + name + BIF_EXT).c_str(), "wb");
-        idxfs = fopen((dir_path + name + IDX_EXT).c_str(), "wb");
-        dmdfs = fopen((dir_path + name + DMD_EXT).c_str(), "wb");
+        char *idxpath = strdup((dir_path + name + IDX_EXT).c_str());
+        char *bifpath = strdup((dir_path + name + BIF_EXT).c_str());
+        char *dmdpath = strdup((dir_path + name + DMD_EXT).c_str());
+        if(access(idxpath, F_OK) || access(bifpath, F_OK) || access(dmdpath, F_OK)) {
+            biffs = fopen(bifpath, "wb+");
+            idxfs = fopen(idxpath, "wb+");
+            dmdfs = fopen(dmdpath, "wb+");
+        } else {
+            biffs = fopen(bifpath, "wb+");
+            idxfs = fopen(idxpath, "wb+");
+            dmdfs = fopen(dmdpath, "wb+");
+        }
+        free(idxpath);
+        free(bifpath);
+        free(dmdpath);
 	}
+    uint32_t findUnset() {
+        uint32_t indicator;
+        while(fread(&indicator, sizeof(indicator), 1, biffs) == 1) {
+            if(indicator == 0xffff) break;
+        }
+        indicator = 0;
+        fwrite(&indicator, sizeof(indicator), 1, biffs);
+        return ftell(biffs) - sizeof(indicator);
+    }
+    void writeDmd(const byte *data, const size_t length, const uint32_t offset) {
+        fseek(dmdfs, offset, SEEK_SET);
+        fwrite(data, length, 1, dmdfs);
+        fseek(dmdfs, BLOCK_SIZE - length - 1, SEEK_END);
+        byte zero = 0;
+        fwrite(&zero, 1, 1, dmdfs);
+    }
 };
 #endif
