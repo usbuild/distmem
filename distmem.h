@@ -17,6 +17,8 @@
 #define KEY_LEN     256
 #define MAX_LEN     1   //to save the last block offset
 #define OFFSET      4
+#define IDX_SIZE    sizeof(struct index)
+#define BIF_SIZE    sizeof(uint32_t)
 
 using std::string;
 extern int errno;

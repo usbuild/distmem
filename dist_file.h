@@ -7,29 +7,33 @@
 class Domain
 {
 public:
-	Domain(std::string &str):name(str){
+    Domain(std::string &str):name(str){
         dir_path = string(DATA_PATH) +  PATH_SEP + name + PATH_SEP;
         readFiles();
     }
-	Domain(const char *str):name(str){
+    Domain(const char *str):name(str){
         dir_path = string(DATA_PATH) +  PATH_SEP + name + PATH_SEP;
         readFiles();
     }
-	virtual ~Domain(){
+    virtual ~Domain(){
         fclose(biffs);
         fclose(idxfs);
         fclose(dmdfs);
-	}
+    }
     void insert(const char *key, const byte *data, const size_t length){
         struct index i;
         i.used = 1;
+        bzero(i.key, KEY_LEN);
         strcpy(i.key, key);
         i.length = byte(length % BLOCK_SIZE);
-        i.offset = findUnset();
+        i.offset = findUnsetBif();
         writeDmd(data, length, i.offset);
+        fseek(idxfs, findUnsetIdx() * IDX_SIZE, SEEK_SET);
+        fwrite(&i, IDX_SIZE, 1, idxfs);
+
     }
 
-	
+
 private:
     FILE *biffs;
     FILE *idxfs;
@@ -37,7 +41,7 @@ private:
     string dir_path;
     string name;
 
-	void readFiles() {
+    void readFiles() {
         mkdir(dir_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         char *idxpath = strdup((dir_path + name + IDX_EXT).c_str());
         char *bifpath = strdup((dir_path + name + BIF_EXT).c_str());
@@ -54,17 +58,25 @@ private:
         free(idxpath);
         free(bifpath);
         free(dmdpath);
-	}
-    uint32_t findUnset() {
-        uint32_t indicator;
+    }
+    uint32_t findUnsetIdx() {
+        struct index idx;
         int i = 0;
-        while(fread(&indicator, sizeof(indicator), 1, biffs) == 1) {
-            if(indicator == 0xffff) break;
+        while(fread(&idx, IDX_SIZE, 1, idxfs) == 1) {
+            if(idx.used == 0) { 
+                return ftell(idxfs) / IDX_SIZE - 1;
+            }
         }
-        indicator = 0;
-        fwrite(&indicator, sizeof(indicator), 1, biffs);
-        printf("%d\n", ftell(biffs) - sizeof(indicator));
-        return ftell(biffs) / sizeof(indicator) - 1;
+        return ftell(idxfs) / IDX_SIZE;
+    }
+    uint32_t findUnsetBif() {
+        uint32_t indicator;
+        while(fread(&indicator, sizeof(indicator), 1, biffs) == 1) {
+            if(indicator == 0xffff) {
+                return ftell(biffs) / BIF_SIZE - 1;
+            }
+        }
+        return ftell(biffs) / BIF_SIZE;
     }
     void writeDmd(const byte *data, const size_t length, const uint32_t offset) {
         fseek(dmdfs, offset * BLOCK_SIZE, SEEK_SET);
