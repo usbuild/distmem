@@ -20,6 +20,27 @@ public:
         fclose(idxfs);
         fclose(dmdfs);
     }
+    void find(const char *key, byte* &data, size_t &length) {
+        struct index idx;
+        fseek(idxfs, 0, SEEK_SET);
+        while(fread(&idx, IDX_SIZE, 1, idxfs) == 1) {
+            if(idx.used == 1) {
+                if(strcmp(idx.key, key) == 0) {
+                    uint32_t offset = readBif(idx.offset);
+                    if(offset == BIF_END)
+                        data = readDmd(idx.offset);
+                    else 
+                        data = readDmd(offset);
+                    length = idx.length;
+                    return;
+                }
+            } else {
+                continue;
+            }
+        }
+        data = NULL;
+        length = 0;
+    }
     void insert(const char *key, const byte *data, const size_t length){
         struct index idx;
         idx.used = 1;
@@ -28,13 +49,15 @@ public:
         idx.length = byte(length % BLOCK_SIZE);
 
         fseek(idxfs, findUnsetIdx() * IDX_SIZE, SEEK_SET);
+        idx.offset = findUnsetBif();
         fwrite(&idx, IDX_SIZE, 1, idxfs);
         
         int spice_count = length / BLOCK_SIZE + 1;
         int i = 0;
         int final = BIF_END;
         vector<uint32_t> v;
-        for(i = 0; i < spice_count; i++) {
+        v.push_back(idx.offset);
+        for(i = 0; i < spice_count - 1; i++) {
             v.push_back(findUnsetBif());
         }
         for(i = 0; i < spice_count; i++) {
@@ -45,7 +68,6 @@ public:
                 fwrite(&v[i + 1], BIF_SIZE, 1, biffs);
             }
         }
-        idx.offset = v[0];
         writeDmd(data, length, idx.offset);
     }
 
@@ -57,7 +79,7 @@ private:
     string dir_path;
     string name;
 
-    void readFiles() {
+    void readFiles() {/*{{{*/
         mkdir(dir_path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         char *idxpath = strdup((dir_path + name + IDX_EXT).c_str());
         char *bifpath = strdup((dir_path + name + BIF_EXT).c_str());
@@ -74,7 +96,7 @@ private:
         free(idxpath);
         free(bifpath);
         free(dmdpath);
-    }
+    }/*}}}*/
     uint32_t findUnsetIdx() {
         struct index idx;
         int i = 0;
@@ -107,6 +129,18 @@ private:
         fseek(dmdfs, BLOCK_SIZE - length - 1, SEEK_END);
         byte zero = 0;
         fwrite(&zero, 1, 1, dmdfs);
+    }
+    byte* readDmd(uint32_t offset) {
+        byte *data = (byte*) malloc(sizeof(byte) * BLOCK_SIZE);
+        fseek(dmdfs, offset * BLOCK_SIZE, SEEK_SET);
+        fread(data, BLOCK_SIZE, 1, dmdfs);
+        return data;
+    }
+    uint32_t readBif(uint32_t offset) {
+        uint32_t data;
+        fseek(biffs, offset * BIF_SIZE, SEEK_SET);
+        fread(&data, BIF_SIZE, 1, biffs);
+        return data;
     }
 };
 #endif
