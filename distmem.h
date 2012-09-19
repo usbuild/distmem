@@ -30,7 +30,7 @@ typedef unsigned char byte;
 struct index{
     byte used;
     char key[KEY_LEN];
-    byte length;
+    uint32_t   length;
     uint32_t   offset;
 };
 #endif
