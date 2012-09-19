@@ -27,12 +27,21 @@ public:
         while(fread(&idx, IDX_SIZE, 1, idxfs) == 1) {
             if(idx.used == 1) {
                 if(strcmp(idx.key, key) == 0) {
-                    uint32_t offset = readBif(idx.offset);
-                    if(offset == BIF_END) {
-                        data = readDmd(idx.offset);
-                    }
-                    else  {
-                        data = readDmd(offset);
+                    data = (byte*) malloc(sizeof(byte) * idx.length);
+                    length = idx.length;
+                    uint32_t offset =  idx.offset;
+                    int write_len = 0;
+                    while(1) {
+                        printf("%d\n", offset);
+                        if(readBif(offset) == BIF_END) {
+                            readDmd(data + write_len, length % BLOCK_SIZE, offset);
+                            write_len += length % BLOCK_SIZE;
+                            break;
+                        } else  {
+                            readDmd(data + write_len, BLOCK_SIZE, offset);
+                            write_len += BLOCK_SIZE;
+                        }
+                        offset = readBif(offset);
                     }
                     length = idx.length;
                     return;
@@ -95,9 +104,9 @@ private:
             idxfs = fopen(idxpath, "wb+");
             dmdfs = fopen(dmdpath, "wb+");
         } else {
-            biffs = fopen(bifpath, "wb+");
-            idxfs = fopen(idxpath, "wb+");
-            dmdfs = fopen(dmdpath, "wb+");
+            biffs = fopen(bifpath, "rb+");
+            idxfs = fopen(idxpath, "rb+");
+            dmdfs = fopen(dmdpath, "rb+");
         }
         free(idxpath);
         free(bifpath);
@@ -141,15 +150,15 @@ private:
             fwrite(&zero, 1, 1, dmdfs);
         }
     }
-    byte* readDmd(const byte* data, const uint32_t length, uint32_t offset) {
+    void readDmd(byte* data, const uint32_t length, uint32_t offset) {
         byte buff[BLOCK_SIZE];
         fseek(dmdfs, offset * BLOCK_SIZE, SEEK_SET);
         fread(buff, BLOCK_SIZE, 1, dmdfs);
-        uint32_t write_len = length;
+        size_t write_len = (size_t)length;
         if(write_len > BLOCK_SIZE) {
             write_len = BLOCK_SIZE;
         }
-
+        memcpy(data, buff, write_len);
     }
     uint32_t readBif(uint32_t offset) {
         uint32_t data;

@@ -8,6 +8,7 @@ int main() {
     byte *data;
     size_t length;
     dm.find("Hello", data, length);
-    printf("%s\n", data);
+    printf("Data: %s\n", data);
+    printf("Length: %u\n", length);
 	return 0;
 }
