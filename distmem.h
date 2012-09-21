@@ -1,6 +1,7 @@
 #ifndef __DISTMEM_H__
 #define __DISTMEM_H__
 #include <string.h>
+#include <iostream>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
