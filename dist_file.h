@@ -27,11 +27,12 @@ public:
             data = NULL;
             length = 0;
         }
-        fseek(idxfs, IDX_SIZE, SEEK_SET);
+        fseek(idxfs, IDX_SIZE * idx_offset, SEEK_SET);
         fread(&idx, IDX_SIZE, 1, idxfs);
         data = (byte*) malloc(sizeof(byte) * idx.length);
         length = idx.length;
         uint32_t offset =  idx.offset;
+
         int write_len = 0;
         while(1) {
             if(readBif(offset) == BIF_END) {
@@ -63,7 +64,7 @@ public:
     }
 
     void insert(const char *key, const byte *data, const size_t length){/*{{{*/
-        if(locate(key) == IDX_NOT_FOUND) remove(key);
+        if(locate(key) != IDX_NOT_FOUND) remove(key);
         struct index idx;
         idx.used = 1;
         bzero(idx.key, KEY_LEN);
