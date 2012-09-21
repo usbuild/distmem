@@ -1,5 +1,5 @@
-#ifndef __DIST_FILE_H__
-#define __DIST_FILE_H__
+#ifndef __DM_DOMAIN_H__
+#define __DM_DOMAIN_H__
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "distmem.h"
@@ -48,20 +48,6 @@ public:
         length = idx.length;
     }
 
-    uint32_t locate(const char *key) {
-        struct index idx;
-        fseek(idxfs, 0, SEEK_SET);
-        while(fread(&idx, IDX_SIZE, 1, idxfs) == 1) {
-            if(idx.used == 1) {
-                if(strcmp(idx.key, key) == 0) {
-                    return ftell(idxfs) / IDX_SIZE - 1;
-                }
-            } else {
-                continue;
-            }
-        }
-        return IDX_NOT_FOUND;
-    }
 
     void insert(const char *key, const byte *data, const size_t length){/*{{{*/
         if(locate(key) != IDX_NOT_FOUND) remove(key);
@@ -213,6 +199,20 @@ private:
         fseek(idxfs, offset * IDX_SIZE, SEEK_SET);
         fwrite(&idx, IDX_SIZE, 1, idxfs);
         fflush(idxfs);
+    }
+    uint32_t locate(const char *key) {
+        struct index idx;
+        fseek(idxfs, 0, SEEK_SET);
+        while(fread(&idx, IDX_SIZE, 1, idxfs) == 1) {
+            if(idx.used == 1) {
+                if(strcmp(idx.key, key) == 0) {
+                    return ftell(idxfs) / IDX_SIZE - 1;
+                }
+            } else {
+                continue;
+            }
+        }
+        return IDX_NOT_FOUND;
     }
 };
 #endif
