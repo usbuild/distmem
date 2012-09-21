@@ -22,38 +22,48 @@ public:
     }
     void find(const char *key, byte* &data, size_t &length) {
         struct index idx;
-        fseek(idxfs, 0, SEEK_SET);
+        uint32_t idx_offset = locate(key);
+        if(IDX_NOT_FOUND == idx_offset) {
+            data = NULL;
+            length = 0;
+        }
+        fseek(idxfs, IDX_SIZE, SEEK_SET);
+        fread(&idx, IDX_SIZE, 1, idxfs);
+        data = (byte*) malloc(sizeof(byte) * idx.length);
+        length = idx.length;
+        uint32_t offset =  idx.offset;
+        int write_len = 0;
+        while(1) {
+            if(readBif(offset) == BIF_END) {
+                readDmd(data + write_len, length % BLOCK_SIZE, offset);
+                write_len += length % BLOCK_SIZE;
+                break;
+            } else  {
+                readDmd(data + write_len, BLOCK_SIZE, offset);
+                write_len += BLOCK_SIZE;
+            }
+            offset = readBif(offset);
+        }
+        length = idx.length;
+    }
 
+    uint32_t locate(const char *key) {
+        struct index idx;
+        fseek(idxfs, 0, SEEK_SET);
         while(fread(&idx, IDX_SIZE, 1, idxfs) == 1) {
             if(idx.used == 1) {
                 if(strcmp(idx.key, key) == 0) {
-                    data = (byte*) malloc(sizeof(byte) * idx.length);
-                    length = idx.length;
-                    uint32_t offset =  idx.offset;
-                    int write_len = 0;
-                    while(1) {
-                        printf("%d\n", offset);
-                        if(readBif(offset) == BIF_END) {
-                            readDmd(data + write_len, length % BLOCK_SIZE, offset);
-                            write_len += length % BLOCK_SIZE;
-                            break;
-                        } else  {
-                            readDmd(data + write_len, BLOCK_SIZE, offset);
-                            write_len += BLOCK_SIZE;
-                        }
-                        offset = readBif(offset);
-                    }
-                    length = idx.length;
-                    return;
+                    return ftell(idxfs) / IDX_SIZE - 1;
                 }
             } else {
                 continue;
             }
         }
-        data = NULL;
-        length = 0;
+        return IDX_NOT_FOUND;
     }
-    void insert(const char *key, const byte *data, const size_t length){
+
+    void insert(const char *key, const byte *data, const size_t length){/*{{{*/
+        if(locate(key) == IDX_NOT_FOUND) remove(key);
         struct index idx;
         idx.used = 1;
         bzero(idx.key, KEY_LEN);
@@ -84,8 +94,28 @@ public:
             writeDmd(data + write_len, length - write_len, v[i]);
             write_len += BLOCK_SIZE;
         }
+    }/*}}}*/
+    
+    void remove(const char *key) {
+        uint32_t idx_offset = locate(key);
+        struct index idx;
+        if(IDX_NOT_FOUND == idx_offset) {
+            return;
+        }
+        fseek(idxfs, IDX_SIZE * idx_offset, SEEK_SET);
+        fread(&idx, IDX_SIZE, 1, idxfs);
+        fseek(idxfs, (-1) * IDX_SIZE , SEEK_CUR);
+        idx.used = 0;
+        fwrite(&idx, IDX_SIZE, 1, idxfs);
+        fflush(idxfs);
+        uint32_t bif_offset = idx.offset;
+        for( ; ; ) {
+            uint32_t old_bif_offset = bif_offset;
+            bif_offset = readBif(bif_offset);
+            eraseBif(old_bif_offset);
+            if(bif_offset == BIF_END || bif_offset == BIF_NOT_USE) return;
+        }
     }
-
 
 private:
     FILE *biffs;
@@ -131,6 +161,7 @@ private:
             if(indicator == BIF_NOT_USE) {
                 fseek(biffs, BIF_SIZE * -1, SEEK_CUR);
                 fwrite(&final, BIF_SIZE, 1, biffs);
+                fflush(biffs);
                 return ftell(biffs) / BIF_SIZE - 1;
             }
         }
@@ -144,10 +175,12 @@ private:
 
         fseek(dmdfs, offset * BLOCK_SIZE, SEEK_SET);
         fwrite(data, write_len, 1, dmdfs);
+        fflush(dmdfs);
         if(ftell(dmdfs) % BLOCK_SIZE != 0) {//并没有填充完
             fseek(dmdfs, BLOCK_SIZE - length - 1, SEEK_END);
             byte zero = 0;
             fwrite(&zero, 1, 1, dmdfs);
+            fflush(dmdfs);
         }
     }
     void readDmd(byte* data, const uint32_t length, uint32_t offset) {
@@ -165,6 +198,19 @@ private:
         fseek(biffs, offset * BIF_SIZE, SEEK_SET);
         fread(&data, BIF_SIZE, 1, biffs);
         return data;
+    }
+    void eraseBif(uint32_t offset) {
+        fseek(biffs, offset * BIF_SIZE, SEEK_SET);
+        uint32_t data = BIF_NOT_USE;
+        fwrite(&data, BIF_SIZE, 1, biffs);
+        fflush(biffs);
+    }
+    void eraseIdx(uint32_t offset) {
+        struct index idx;
+        bzero(&idx, IDX_SIZE);
+        fseek(idxfs, offset * IDX_SIZE, SEEK_SET);
+        fwrite(&idx, IDX_SIZE, 1, idxfs);
+        fflush(idxfs);
     }
 };
 #endif

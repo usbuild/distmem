@@ -22,6 +22,7 @@
 #define BIF_SIZE    sizeof(uint32_t)
 #define BIF_END     0xfffffffe
 #define BIF_NOT_USE 0xffffffff
+#define IDX_NOT_FOUND 0xffffffff
 
 using std::string;
 using std::vector;
