@@ -178,7 +178,8 @@ private:
         fwrite(data, write_len, 1, dmdfs);
         fflush(dmdfs);
         if(ftell(dmdfs) % BLOCK_SIZE != 0) {//并没有填充完
-            fseek(dmdfs, BLOCK_SIZE - length - 1, SEEK_END);
+
+            fseek(dmdfs, BLOCK_SIZE - ftell(dmdfs) % BLOCK_SIZE - 1, SEEK_CUR);
             byte zero = 0;
             fwrite(&zero, 1, 1, dmdfs);
             fflush(dmdfs);
