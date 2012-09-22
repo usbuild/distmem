@@ -49,6 +49,7 @@ void Domain::set(const char *key, const byte *data, const size_t length){/*{{{*/
     fseek(idxfs, findUnsetIdx() * IDX_SIZE, SEEK_SET);
     idx.offset = findUnsetBif();
     fwrite(&idx, IDX_SIZE, 1, idxfs);
+    fflush(idxfs);
     
     int spice_count = length / BLOCK_SIZE + 1;
     int i = 0;
