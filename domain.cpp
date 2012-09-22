@@ -1,4 +1,4 @@
-#include "domain.h"
+#include <domain.h>
 Domain::Domain(std::string &str):name(str) {
         dir_path = string(DATA_PATH) +  PATH_SEP + name + PATH_SEP;
         readFiles();

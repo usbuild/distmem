@@ -24,6 +24,7 @@
 #define BIF_END     0xfffffffe
 #define BIF_NOT_USE 0xffffffff
 #define IDX_NOT_FOUND 0xffffffff
+#define DEFAULT_PORT    4327
 
 using std::string;
 using std::vector;

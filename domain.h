@@ -2,7 +2,7 @@
 #define __DM_DOMAIN_H__
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "distmem.h"
+#include <distmem.h>
 class Domain
 {
 public:
