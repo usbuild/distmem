@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <connection.h>
 class Server 
 {
 private:
@@ -12,6 +13,6 @@ public:
     Server(){}
     virtual ~Server(){}
     void start();
-    int getClient();
+    Connection* getConnection();
 };
 #endif

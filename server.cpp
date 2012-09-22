@@ -15,12 +15,17 @@ void Server::start() {
     if(res == -1) exit(0);
 }
 
-int Server::getClient() {
+Connection* Server::getConnection() {
     struct sockaddr_in client_address;
     int client_sockfd; 
+    Connection *conn = new Connection();
     socklen_t client_len = sizeof(client_address);
     client_sockfd = accept(server_sockfd, (struct sockaddr *)&client_address, &client_len);
-    std::cout << this->server_sockfd << std::endl;
-    if(client_sockfd == -1) {perror("Accept"); exit(1);}
-    return client_sockfd;
+    if(client_sockfd == -1) {
+        delete conn;
+        return NULL;
+    }
+    conn->client_fd = client_sockfd;
+    conn->server_fd = this->server_sockfd;
+    return conn;
 }

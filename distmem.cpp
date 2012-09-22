@@ -1,13 +1,20 @@
 #include <distmem.h>
 #include <domain.h>
 #include <server.h>
+#include <connection.h>
+#include <handler.h>
 
 int main() {
     Server server;
     server.start();
-    int client_fd;
-    while(client_fd = server.getClient()) {
-        std::cout << "client_fd:" << client_fd << std::endl;
+    Connection *conn;
+    for( ; ; ) {
+        conn = server.getConnection();
+        if(conn == NULL) continue;
+        Handler handler(conn);
+        handler.handle();
+        conn->close();
+        delete conn;
     }
     return 0;
 }
