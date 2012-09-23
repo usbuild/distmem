@@ -18,6 +18,7 @@ void Domain::get(const char *key, byte* &data, size_t &length) { /*{{{*/
         if(IDX_NOT_FOUND == idx_offset) {
             data = NULL;
             length = 0;
+            return;
         }
         fseek(idxfs, IDX_SIZE * idx_offset, SEEK_SET);
         fread(&idx, IDX_SIZE, 1, idxfs);

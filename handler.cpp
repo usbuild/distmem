@@ -8,7 +8,6 @@ void Handler::handle() {
     char **params;
     int i = 0;
     int param_num = 0;
-    Domain *domain = NULL;
     while(fgets(line, LINE_LEN, f)) {
         if(line[0] == '*') {
             if(param_num != 0) {
@@ -26,27 +25,17 @@ void Handler::handle() {
             fgets(line, LINE_LEN, f);
             if(i == param_num) {
                 if(strncmp(params[0], "use", strlen("use")) == 0){
-                    if(domain != NULL) delete domain;
                     string doname(string(params[1], len));
-                    domain = new Domain(doname);
-                    write(fd, "OK", strlen("OK") + 1);
+                    this->handleUse(doname);
                 } else {
-                    if(domain == NULL) {
+                    if(this->domain == NULL) {
                         write(fd, "Please use domain", strlen("Please use domain") + 1);
                         continue;
                     }
                     if(strncmp(params[0], "set", strlen("set")) == 0) {
-                        domain->set(params[1], (const byte*)params[2], len + 1);
-                        write(fd, "OK", strlen("OK") + 1);
+                        this->handleSet(params[1], params[2], len + 1);
                     } else if(strncmp(params[0], "get", strlen("get")) == 0){
-                        size_t length;
-                        byte* data;
-                        domain->get(params[1], data, length);
-                        if(length == 0){
-                            write(fd, " ", 1);
-                        } else {
-                            write(fd, data, length);
-                        }
+                        this->handleGet(params[1]);
                     } else {
                         write(fd, "OK", strlen("OK") + 1);
                     }
@@ -54,4 +43,29 @@ void Handler::handle() {
             }
         }
     }
+}
+
+void Handler::handleSet(const char *key, const char *data, size_t length) {
+        int fd = this->conn->getClientFd();
+        this->domain->set(key, (const byte*)data, length);
+        write(fd, "OK", strlen("OK") + 1);
+}
+void Handler::handleGet(const char *key) {
+        int fd = this->conn->getClientFd();
+        size_t length;
+        byte* data;
+        this->domain->get(key, data, length);
+        if(length == 0){
+            write(fd, " ", 1);
+        } else {
+            write(fd, data, length);
+        }
+}
+void Handler::handleUse(string &doname) {
+    int fd = this->conn->getClientFd();
+    if(this->domain != NULL) {
+        delete this->domain;
+    }
+    this->domain = new Domain(doname);
+    write(fd, "OK", strlen("OK") + 1);
 }
