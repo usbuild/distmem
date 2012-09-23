@@ -3,6 +3,9 @@ import socket
 import time  
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
 sock.connect(('localhost', 4327))  
+param1 = []
+param2 = ['use', 'get']
+param3 = ['set']
 while True:
     s = raw_input("Prompt:>");
     if s == "exit": break;
@@ -10,14 +13,17 @@ while True:
     sa = s.split()
     p = []
     p.append(sa[0])
-    if sa[0] == 'set':
+    if sa[0] in param1:
+        pass
+    elif sa[0] in param2:
+        p.append(sa[1])
+    elif sa[0] in param3:
         p.append(sa[1])
         p.append(s[s.find(" " + p[-1] +" ") + len(p[-1]) + 1:].lstrip())
-    elif sa[0] == 'get':
-        p.append(sa[1])
     else:
         print 'Unknown Command'
         continue
+
     request = "*" + str(len(p)) + "\r\n"
     for param in p:
         request += "$" + str(len(param)) +"\r\n"

@@ -6,6 +6,8 @@ class Connection
 public:
     int server_fd;
     int client_fd;
+    string domain;
+    Connection():domain(""){}
     void close(){
         ::close(client_fd);
     }
