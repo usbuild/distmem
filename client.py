@@ -20,6 +20,11 @@ while True:
     elif sa[0] in param3:
         p.append(sa[1])
         p.append(s[s.find(" " + p[-1] +" ") + len(p[-1]) + 1:].lstrip())
+        try:
+            exec("data = " + p[-1]);#to assign data to the value
+        except:
+            print 'Syntax Error'
+            continue
     else:
         print 'Unknown Command'
         continue
