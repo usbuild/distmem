@@ -19,7 +19,8 @@ void Handler::handle() {
         } 
         if(line[0] == '$') {
             size_t len = atol(line + 1);
-            params[i] = new char[len];
+            params[i] = new char[len + 1];
+            params[i][len] = '\0';
             fread(params[i], len, 1, f);
             i++;
             fgets(line, LINE_LEN, f);
