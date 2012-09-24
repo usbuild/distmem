@@ -25,6 +25,7 @@
 #define BIF_NOT_USE 0xffffffff
 #define IDX_NOT_FOUND 0xffffffff
 #define DEFAULT_PORT    4327
+#define ARRAY_SEP   ',' 
 
 using std::string;
 using std::vector;
