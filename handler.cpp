@@ -29,15 +29,15 @@ void Handler::handle() {
                     this->handleUse(doname);
                 } else {
                     if(this->domain == NULL) {
-                        write(fd, "Please use domain", strlen("Please use domain") + 1);
+                        this->sendMsg("-Please select a domain");
                         continue;
                     }
                     if(strncmp(params[0], "set", strlen("set")) == 0) {
-                        this->handleSet(params[1], params[2], len + 1);
+                        this->handleSet(params[1], params[2], len);
                     } else if(strncmp(params[0], "get", strlen("get")) == 0){
                         this->handleGet(params[1]);
                     } else {
-                        write(fd, "OK", strlen("OK") + 1);
+                        this->sendMsg("-Unknown Operation");
                     }
                 }
             }
@@ -46,26 +46,31 @@ void Handler::handle() {
 }
 
 void Handler::handleSet(const char *key, const char *data, size_t length) {
-        int fd = this->conn->getClientFd();
         this->domain->set(key, (const byte*)data, length);
-        write(fd, "OK", strlen("OK") + 1);
+        this->sendMsg("+OK");
 }
 void Handler::handleGet(const char *key) {
         int fd = this->conn->getClientFd();
+        char str[LINE_LEN];
         size_t length;
         byte* data;
         this->domain->get(key, data, length);
-        if(length == 0){
-            write(fd, " ", 1);
+        if(length == 0) {
+            this->sendMsg("$-1");
         } else {
+            sprintf(str, "$%u\r\n", length);
+            this->sendMsg(str);
             write(fd, data, length);
+            this->sendMsg("\r\n");
         }
 }
 void Handler::handleUse(string &doname) {
-    int fd = this->conn->getClientFd();
     if(this->domain != NULL) {
         delete this->domain;
     }
     this->domain = new Domain(doname);
-    write(fd, "OK", strlen("OK") + 1);
+    this->sendMsg("+OK");
 }
+void Handler::sendMsg(const char *msg) {
+    int fd = this->conn->getClientFd();
+    write(fd, msg, strlen(msg)); }

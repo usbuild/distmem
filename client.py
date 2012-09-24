@@ -52,7 +52,7 @@ while True:
         if type(data).__name__ in ('int', 'float', 'str'):
             request += "$" + str(len(str(data)) + 1) + "\r\n"
             request += getFlag(data) + str(data) + "\r\n"
-        elif type(data).__name__ == 'list':
+        elif type(data) is list:
             #list类型以,为分隔符，对于字符中出现的,应使用\,转义
             data_arr = []
             for d in data:
@@ -69,5 +69,12 @@ while True:
             continue
 
     sock.send(request + "\n")
-    print sock.recv(2048)
+    time.sleep(0.1)
+    re = sock.recv(2048)
+    print re
+
+    #if re[0] in ('+', '-'):
+        #print re
+    #elif re[0] == '$':
+        #sock.recv()
 sock.close()
