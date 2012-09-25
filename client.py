@@ -6,7 +6,6 @@ def getFlag(var):
     d = {'float':'f', 'int':'i', 'str':'s', 'list':'l'}
     if d.has_key(type(var).__name__):
         return d[type(var).__name__]
-        pass
     else:
         return None
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
@@ -60,7 +59,7 @@ while True:
                 if d is None:
                     print 'Unknown Value'
                     continue
-                data_arr.append(symbol + str(d).replace(',', '\,'))
+                data_arr.append(symbol + str(d).replace('\\', '\\\\').replace(',', '\,'))
             data_str = ','.join(data_arr)
             request += "$" + str(len(data_str) + 1) + "\r\n"
             request += getFlag(data) + data_str + "\r\n"
@@ -69,12 +68,22 @@ while True:
             continue
 
     sock.send(request + "\n")
-    time.sleep(0.1)
+    time.sleep(0.05)
     re = sock.recv(2048)
-    print re
+    if re[0] in ('+', '-'):
+        print re[1:]
+    elif re[0] == '$':
+        resp_len = int(re[1:re.find("\r\n")])
+        data_start = re.find("\r\n") + 2;
+        data = re[data_start:data_start + resp_len]
+        if data[0] == "s":
+            raw_data = data[1:]
+        elif data[0] == "f":
+            raw_data = float(data[1:])
+        elif data[0] == "i":
+            raw_data = int(data[1:])
+        else:
+            pass
+        print '('+type(raw_data).__name__+')', raw_data
 
-    #if re[0] in ('+', '-'):
-        #print re
-    #elif re[0] == '$':
-        #sock.recv()
 sock.close()
