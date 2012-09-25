@@ -2,12 +2,32 @@
 # -*- coding:utf-8 -*-
 import socket  
 import time  
+import re
+r = re.compile(r'(?<!\\),|(?<=\\\\),')
 def getFlag(var):
     d = {'float':'f', 'int':'i', 'str':'s', 'list':'l'}
     if d.has_key(type(var).__name__):
         return d[type(var).__name__]
     else:
         return None
+
+def parseCMD(data):
+        if data[0] == "s":
+            raw_data = data[1:]
+        elif data[0] == "f":
+            raw_data = float(data[1:])
+        elif data[0] == "i":
+            raw_data = int(data[1:])
+        elif data[0] == "l":
+            raw_array = r.split(data[1:])
+            raw_data = []
+            for item in raw_array:
+                if item[0] == "s":
+                    item = item.replace('\,', ',').replace('\\\\', '\\')
+                raw_data.append(parseCMD(item));
+        else:
+            raw_data = data
+        return raw_data
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
 sock.connect(('localhost', 4327))  
 param1 = []
@@ -74,16 +94,11 @@ while True:
         print re[1:]
     elif re[0] == '$':
         resp_len = int(re[1:re.find("\r\n")])
+        if resp_len == -1:
+            print "Not Found"
+            continue
         data_start = re.find("\r\n") + 2;
         data = re[data_start:data_start + resp_len]
-        if data[0] == "s":
-            raw_data = data[1:]
-        elif data[0] == "f":
-            raw_data = float(data[1:])
-        elif data[0] == "i":
-            raw_data = int(data[1:])
-        else:
-            pass
-        print '('+type(raw_data).__name__+')', raw_data
 
+        print parseCMD(data)
 sock.close()
