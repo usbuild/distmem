@@ -34,7 +34,7 @@ param1 = []
 param2 = ['use', 'get']
 param3 = ['set']
 while True:
-    s = raw_input("Prompt:>");
+    s = raw_input("DistMem:>");
     if s == "exit": break;
     s = s.lstrip()
     sa = s.split()
@@ -99,6 +99,6 @@ while True:
             continue
         data_start = re.find("\r\n") + 2;
         data = re[data_start:data_start + resp_len]
-
-        print parseCMD(data)
+        data = parseCMD(data)
+        print "("+type(data).__name__+")", data
 sock.close()
