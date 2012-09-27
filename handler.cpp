@@ -57,7 +57,7 @@ void Handler::handleGet(const char *key) {
         byte* data;
         this->domain->get(key, data, length);
         if(length == 0) {
-            this->sendMsg("$-1");
+            this->sendMsg("$-1\r\n");
         } else {
             sprintf(str, "$%u", length);
             this->sendMsg(str);
