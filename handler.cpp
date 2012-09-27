@@ -59,10 +59,10 @@ void Handler::handleGet(const char *key) {
         if(length == 0) {
             this->sendMsg("$-1");
         } else {
-            sprintf(str, "$%u\r\n", length);
+            sprintf(str, "$%u", length);
             this->sendMsg(str);
             write(fd, data, length);
-            this->sendMsg("\r\n");
+            this->sendMsg("");
         }
 }
 void Handler::handleUse(string &doname) {
@@ -74,4 +74,6 @@ void Handler::handleUse(string &doname) {
 }
 void Handler::sendMsg(const char *msg) {
     int fd = this->conn->getClientFd();
-    write(fd, msg, strlen(msg)); }
+    write(fd, msg, strlen(msg));
+    write(fd, "\r\n", strlen("\r\n")); 
+}
