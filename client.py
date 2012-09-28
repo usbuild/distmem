@@ -12,6 +12,7 @@ def getFlag(var):
         return None
 
 def parseCMD(data):
+        print data
         if data[0] == "s":
             raw_data = data[1:]
         elif data[0] == "f":
