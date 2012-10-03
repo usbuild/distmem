@@ -11,6 +11,7 @@ private:
     void handleUse(string &doname);
     void handleSet(const char *key, const char *data, size_t length);
     void handleGet(const char *key);
+    void handleDel(const char *key);
     void sendMsg(const char *msg);
 public:
     Handler(Connection *conn):conn(conn), domain(NULL){}

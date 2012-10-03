@@ -12,7 +12,6 @@ def getFlag(var):
         return None
 
 def parseCMD(data):
-        print data
         if data[0] == "s":
             raw_data = data[1:]
         elif data[0] == "f":
@@ -32,7 +31,7 @@ def parseCMD(data):
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
 sock.connect(('localhost', 4327))  
 param1 = []
-param2 = ['use', 'get']
+param2 = ['use', 'get', 'del']
 param3 = ['set']
 while True:
     s = raw_input("DistMem:>");

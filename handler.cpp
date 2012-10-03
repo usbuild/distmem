@@ -37,6 +37,8 @@ void Handler::handle() {
                         this->handleSet(params[1], params[2], len);
                     } else if(strncmp(params[0], "get", strlen("get")) == 0){
                         this->handleGet(params[1]);
+                    } else if(strncmp(params[0], "del", strlen("del")) == 0){
+                        this->handleDel(params[1]);
                     } else {
                         this->sendMsg("-Unknown Operation");
                     }
@@ -44,26 +46,31 @@ void Handler::handle() {
             }
         }
     }
+    exit(0);
 }
 
 void Handler::handleSet(const char *key, const char *data, size_t length) {
-        this->domain->set(key, (const byte*)data, length);
-        this->sendMsg("+OK");
+    this->domain->set(key, (const byte*)data, length);
+    this->sendMsg("+OK");
 }
 void Handler::handleGet(const char *key) {
-        int fd = this->conn->getClientFd();
-        char str[LINE_LEN];
-        size_t length;
-        byte* data;
-        this->domain->get(key, data, length);
-        if(length == 0) {
-            this->sendMsg("$-1\r\n");
-        } else {
-            sprintf(str, "$%u", length);
-            this->sendMsg(str);
-            write(fd, data, length);
-            this->sendMsg("");
-        }
+    int fd = this->conn->getClientFd();
+    char str[LINE_LEN];
+    size_t length;
+    byte* data;
+    this->domain->get(key, data, length);
+    if(length == 0) {
+        this->sendMsg("$-1\r\n");
+    } else {
+        sprintf(str, "$%u", length);
+        this->sendMsg(str);
+        write(fd, data, length);
+        this->sendMsg("");
+    }
+}
+void Handler::handleDel(const char *key) {
+    this->domain->remove(key);
+    this->sendMsg("+OK");
 }
 void Handler::handleUse(string &doname) {
     if(this->domain != NULL) {

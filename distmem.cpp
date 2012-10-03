@@ -3,6 +3,7 @@
 #include <server.h>
 #include <connection.h>
 #include <handler.h>
+#include <unistd.h>
 
 int main() {
     Server server;
@@ -10,6 +11,8 @@ int main() {
     Connection *conn;
     for( ; ; ) {
         conn = server.getConnection();
+        pid_t pid = fork();
+        if(pid != 0) continue;
         if(conn == NULL) continue;
         Handler handler(conn);
         handler.handle();
