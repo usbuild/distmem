@@ -1,8 +1,8 @@
 CXX=g++
 CXXFLAGS= -g -I.
 TARGET=distmem
-OBJ=distmem.o domain.o server.o connection.o handler.o
+OBJ=distmem.cpp domain.cpp server.cpp connection.cpp handler.cpp
 $(TARGET): $(OBJ)
-	$(CXX) $(CFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ -o $@
 clean:
-	-rm $(OBJ) $(TARGET)
+	-rm $(TARGET)
