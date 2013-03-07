@@ -19,6 +19,7 @@ private:
     int usedSize;
     BTreeNode<T>* parent;
     NodeUnit<T>* body;
+    bool leaf;
 
 public:
     BTreeNode(int num);
@@ -30,6 +31,8 @@ public:
     int search(T t);
     int remove(T t);
     int insert(T t); 
+    bool isLeaf();
+    void setLeaf(bool leaf);
 };
 
 
@@ -39,8 +42,12 @@ class BTree
 private:
     int size;
     BTreeNode<T> *root;
+    BTreeNode<T>* locate(T t);
 public:
     BTree(int num);
+    NodeUnit<T>* search(T t);
+    int insert(T t);
+    int remove(T t);
 };
 
 #endif

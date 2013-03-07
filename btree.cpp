@@ -2,9 +2,11 @@
 #include <distmem.h>
 #include <btree.h>
 using std::memmove;
+using std::memset;
 template<typename T>
-BTreeNode<T>::BTreeNode(int num):size(num), usedSize(0) {
+BTreeNode<T>::BTreeNode(int num):size(num), usedSize(0), leaf(true) {
     this->body = new NodeUnit<T>[size + 1]; 
+    memset(this->body, 0, sizeof(NodeUnit<T>) * (size + 1));
 }
 
 template<typename T>
@@ -30,7 +32,7 @@ int BTreeNode<T>::insert(T t) {
     memmove(unit + 1, unit, (usedSize - pos) * sizeof(NodeUnit<T>));
     ++usedSize;
     unit->next = NULL;
-    unit->data = t;
+    memcpy(&unit->data, &t, sizeof(T));
     return 0;
 }
 template<typename T>
@@ -58,6 +60,15 @@ int BTreeNode<T>::search(T t) {
     }
     return i;
 }
+template<typename T>
+bool BTreeNode<T>::isLeaf() {
+    return this->leaf;
+}
+
+template<typename T>
+void BTreeNode<T>::setLeaf(bool leaf) {
+    this->leaf = leaf;
+}
 
 
 template<typename T>
@@ -70,9 +81,50 @@ NodeUnit<T>* BTreeNode<T>::get(int i) {
     return &body[i];
 }
 
+
 template<typename T>
 BTree<T>::BTree(int num):size(num) { 
     root = new BTreeNode<T>(size);
+}
+
+template<typename T>
+BTreeNode<T>* BTree<T>::locate(T t) {
+    BTreeNode<T>* node = this->root;
+    NodeUnit<T> *nu;
+    while(node != NULL) {
+        nu = node->search(t);
+        if(nu->data == t) {
+            return node;
+        } else {
+            node = node->next;
+        }
+    }
+    return node;
+}
+
+template<typename T>
+NodeUnit<T>* BTree<T>::search(T t) {
+    BTreeNode<T>* node = this->locate(t);
+    NodeUnit<T>* unit = node->get(node->search(t));
+    if(unit->data == t) return unit;
+    return NULL;
+}
+
+template<typename T>
+int BTree<T>::insert(T t) {
+    BTreeNode<T>* node = this->locate(t);
+    NodeUnit<T>* unit = node->search(t);
+    if(unit->data == t) {
+        memcpy(&unit->data, &t, sizeof(T));
+    } else {
+        unit->next = new BTreeNode<T>(size);
+        unit->next->insert(t);
+    }
+}
+
+template<typename T>
+int BTree<T>::remove(T t) {
+
 }
 
 using std::cout;
