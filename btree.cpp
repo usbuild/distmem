@@ -107,7 +107,7 @@ NodeUnit<T>* BTreeNode<T>::get(int i) {
 template<typename T>
 BTree<T>::BTree(int num):size(num) { 
     root = new BTreeNode<T>(size);
-    root->setParent(root);
+    root->parent = root;
 }
 
 template<typename T>
@@ -117,14 +117,12 @@ BTreeNode<T>* BTree<T>::locate(T t) {
     while(node != NULL) {
         if(node->isFull()) {
             this->explode(node);
-            node = node->parent;
-            continue;
         }
-        nu = node->search(t);
+        nu = node->get(node->search(t));
         if(nu->data == t) {
             return node;
         } else {
-            node = node->next;
+            node = nu->next;
         }
     }
     return node;
@@ -139,20 +137,16 @@ NodeUnit<T>* BTree<T>::search(T t) {
 }
 
 template<typename T>
-void BTreeNode<T>::setParent(BTreeNode<T>* parent) {
-    this->parent = parent;
-}
-
-template<typename T>
 int BTree<T>::insert(T t) {
     BTreeNode<T>* node = this->locate(t);
-    NodeUnit<T>* unit = node->search(t);
+    NodeUnit<T>* unit = node->get(node->search(t));
     if(unit->data == t) {
         memcpy(&unit->data, &t, sizeof(T));
     } else {
         unit->next = new BTreeNode<T>(size);
         unit->next->insert(t);
     }
+    return 1;
 }
 
 template<typename T>
@@ -161,13 +155,13 @@ void BTree<T>::explode(BTreeNode<T>* node) {
     NodeUnit<T>* midUnit = node->get(node->length() - 1);
     //resize
     node->shrink(1);
-    if(node->setParent(this->root)) {
+    if(node->parent == this->root) {
         root = new BTreeNode<T>(this->size);
         node->parent = root;
     }
     rNode->parent = node->parent;
     node->parent->insert(midUnit->data);
-    midUnit = node->parent->search(midUnit->data);
+    midUnit = node->parent->get(node->parent->search(midUnit->data));
     midUnit->next = node;
     (midUnit + 1)->next = rNode;
 }

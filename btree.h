@@ -17,17 +17,16 @@ class BTreeNode
 private:
     int size;
     int usedSize;
-    BTreeNode<T>* parent;
     bool leaf;
     NodeUnit<T>* body;
 
 
 public:
+    BTreeNode<T>* parent;
     BTreeNode(int num);
     bool isFull(); 
     bool isEmpty();
     bool isOverHalf();
-    void setParent(BTreeNode<T>* parent);
     int length();
     NodeUnit<T>* get(int i);
     int search(T t);
