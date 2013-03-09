@@ -3,8 +3,9 @@ using namespace std;
 int main(int argc, const char *argv[])
 {
     BTree<int> b(5);
-    for (int i = 0; i < 100; i++) {
+    for (int i = 1; i < 10; i++) {
         b.insert(i);
     }
+    b.print();
     return 0;
 }

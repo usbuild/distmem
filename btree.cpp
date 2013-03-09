@@ -1,4 +1,5 @@
 #include <cstring>
+#include <iostream>
 #include <distmem.h>
 #include <btree.h>
 using std::memmove;
@@ -114,7 +115,7 @@ template<typename T>
 BTreeNode<T>* BTree<T>::locate(T t) {
     BTreeNode<T>* node = this->root;
     NodeUnit<T> *nu;
-    while(node != NULL) {
+    while(true) {
         if(node->isFull()) {
             this->explode(node);
         }
@@ -122,10 +123,30 @@ BTreeNode<T>* BTree<T>::locate(T t) {
         if(nu->data == t) {
             return node;
         } else {
+            if(nu->next == NULL) return node;
             node = nu->next;
         }
     }
     return node;
+}
+
+template<typename T>
+void BTreeNode<T>::print() {
+    for (int i = 0; i < this->usedSize; i++) {
+        std::cout << this->get(i)->data << "\t";
+    }
+    std::cout << std::endl;
+}
+
+template<typename T>
+void BTree<T>::print() {
+    this->root->print();
+    for(int i = 0; i < this->root->length(); ++i) {
+        BTreeNode<T>* t = this->root->get(i)->next;
+        if(t != NULL) {
+            t->print();
+        }
+    }
 }
 
 template<typename T>
@@ -143,8 +164,7 @@ int BTree<T>::insert(T t) {
     if(unit->data == t) {
         memcpy(&unit->data, &t, sizeof(T));
     } else {
-        unit->next = new BTreeNode<T>(size);
-        unit->next->insert(t);
+        node->insert(t);
     }
     return 1;
 }

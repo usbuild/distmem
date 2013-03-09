@@ -37,6 +37,7 @@ public:
     BTreeNode<T>* explode();
     void dump(NodeUnit<T>* start, int size);
     void shrink(int size);
+    void print();
 };
 
 
@@ -54,6 +55,7 @@ public:
     NodeUnit<T>* search(T t);
     int insert(T t);
     int remove(T t);
+    void print();
 };
 
 #endif
