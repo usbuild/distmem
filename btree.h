@@ -18,14 +18,16 @@ private:
     int size;
     int usedSize;
     BTreeNode<T>* parent;
-    NodeUnit<T>* body;
     bool leaf;
+    NodeUnit<T>* body;
+
 
 public:
     BTreeNode(int num);
     bool isFull(); 
     bool isEmpty();
     bool isOverHalf();
+    void setParent(BTreeNode<T>* parent);
     int length();
     NodeUnit<T>* get(int i);
     int search(T t);
@@ -33,6 +35,9 @@ public:
     int insert(T t); 
     bool isLeaf();
     void setLeaf(bool leaf);
+    BTreeNode<T>* explode();
+    void dump(NodeUnit<T>* start, int size);
+    void shrink(int size);
 };
 
 
@@ -43,6 +48,8 @@ private:
     int size;
     BTreeNode<T> *root;
     BTreeNode<T>* locate(T t);
+    void explode(BTreeNode<T>* node);
+
 public:
     BTree(int num);
     NodeUnit<T>* search(T t);

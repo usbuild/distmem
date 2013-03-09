@@ -2,7 +2,7 @@ CXX=clang++
 CXXFLAGS= -g -I.
 TARGET=distmem
 OBJ=distmem.cpp domain.cpp server.cpp connection.cpp handler.cpp
-test: btree.cpp
+test: test.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@
 $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@

@@ -70,6 +70,28 @@ void BTreeNode<T>::setLeaf(bool leaf) {
     this->leaf = leaf;
 }
 
+template<typename T>
+void BTreeNode<T>::dump(NodeUnit<T>* start, int size) {
+    memcpy(this->body, start, size * sizeof(NodeUnit<T>));
+    this->usedSize = size;
+}
+
+template<typename T>
+BTreeNode<T>* BTreeNode<T>::explode() {
+    int l = this->usedSize / 2;
+    int r = this->usedSize - l;
+    BTreeNode<T>* right = new BTreeNode<T>(this->size);
+    right->dump(this->body + l, r);
+    this->usedSize = l;
+    return right;
+}
+
+template<typename T>
+void BTreeNode<T>::shrink(int size) {
+    this->usedSize -= size;
+}
+
+
 
 template<typename T>
 int BTreeNode<T>::length() {
@@ -85,6 +107,7 @@ NodeUnit<T>* BTreeNode<T>::get(int i) {
 template<typename T>
 BTree<T>::BTree(int num):size(num) { 
     root = new BTreeNode<T>(size);
+    root->setParent(root);
 }
 
 template<typename T>
@@ -92,6 +115,11 @@ BTreeNode<T>* BTree<T>::locate(T t) {
     BTreeNode<T>* node = this->root;
     NodeUnit<T> *nu;
     while(node != NULL) {
+        if(node->isFull()) {
+            this->explode(node);
+            node = node->parent;
+            continue;
+        }
         nu = node->search(t);
         if(nu->data == t) {
             return node;
@@ -111,6 +139,11 @@ NodeUnit<T>* BTree<T>::search(T t) {
 }
 
 template<typename T>
+void BTreeNode<T>::setParent(BTreeNode<T>* parent) {
+    this->parent = parent;
+}
+
+template<typename T>
 int BTree<T>::insert(T t) {
     BTreeNode<T>* node = this->locate(t);
     NodeUnit<T>* unit = node->search(t);
@@ -123,14 +156,24 @@ int BTree<T>::insert(T t) {
 }
 
 template<typename T>
-int BTree<T>::remove(T t) {
-
+void BTree<T>::explode(BTreeNode<T>* node) {
+    BTreeNode<T>* rNode = node->explode();
+    NodeUnit<T>* midUnit = node->get(node->length() - 1);
+    //resize
+    node->shrink(1);
+    if(node->setParent(this->root)) {
+        root = new BTreeNode<T>(this->size);
+        node->parent = root;
+    }
+    rNode->parent = node->parent;
+    node->parent->insert(midUnit->data);
+    midUnit = node->parent->search(midUnit->data);
+    midUnit->next = node;
+    (midUnit + 1)->next = rNode;
 }
 
-using std::cout;
-using std::endl;
-int main(int argc, const char *argv[])
-{
-    BTree<int> b(100);
-    return 0;
+
+template<typename T>
+int BTree<T>::remove(T t) {
+
 }
