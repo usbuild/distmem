@@ -79,7 +79,7 @@ void BTreeNode<T>::dump(NodeUnit<T>* start, int size) {
 
 template<typename T>
 BTreeNode<T>* BTreeNode<T>::explode() {
-    int l = this->usedSize / 2;
+    int l = this->usedSize / 2 + 1;
     int r = this->usedSize - l;
     BTreeNode<T>* right = new BTreeNode<T>(this->size);
     right->dump(this->body + l, r);
@@ -118,6 +118,8 @@ BTreeNode<T>* BTree<T>::locate(T t) {
     while(true) {
         if(node->isFull()) {
             this->explode(node);
+            node = node->parent;
+            continue;
         }
         nu = node->get(node->search(t));
         if(nu->data == t) {
@@ -141,7 +143,7 @@ void BTreeNode<T>::print() {
 template<typename T>
 void BTree<T>::print() {
     this->root->print();
-    for(int i = 0; i < this->root->length(); ++i) {
+    for(int i = 0; i <= this->root->length(); ++i) {
         BTreeNode<T>* t = this->root->get(i)->next;
         if(t != NULL) {
             t->print();
