@@ -14,18 +14,15 @@ Domain::~Domain() {
         fclose(dmdfs);
 }
 void Domain::get(const char *key, byte* &data, size_t &length) { /*{{{*/
-        struct index idx;
-        uint32_t idx_offset = locate(key);
-        if(IDX_NOT_FOUND == idx_offset) {
+        class index* idx = locate(key);
+        if(idx == NULL || idx->used == 0) {
             data = NULL;
             length = 0;
             return;
         }
-        fseek(idxfs, IDX_SIZE * idx_offset, SEEK_SET);
-        fread(&idx, IDX_SIZE, 1, idxfs);
-        data = (byte*) malloc(sizeof(byte) * idx.length);
-        length = idx.length;
-        uint32_t offset =  idx.offset;
+        data = (byte*) malloc(sizeof(byte) * idx->length);
+        length = idx->length;
+        uint32_t offset =  idx->offset;
 
         int write_len = 0;
         while(1) {
@@ -39,25 +36,25 @@ void Domain::get(const char *key, byte* &data, size_t &length) { /*{{{*/
             }
             offset = readBif(offset);
         }
-        length = idx.length;
+        length = idx->length;
 }/*}}}*/
 void Domain::set(const char *key, const byte *data, const size_t length){/*{{{*/
-    if(locate(key) != IDX_NOT_FOUND) remove(key);
-    struct index idx;
-    idx.used = 1;
-    bzero(idx.key, KEY_LEN);
-    strcpy(idx.key, key);
-    idx.length = length;
-    fseek(idxfs, findUnsetIdx() * IDX_SIZE, SEEK_SET);
-    idx.offset = findUnsetBif();
-    fwrite(&idx, IDX_SIZE, 1, idxfs);
-    fflush(idxfs);
+    class index* idx = locate(key);
+    if(idx == NULL) {
+        idx = new class index();
+    }
+    idx->used = 1;
+    bzero(idx->key, KEY_LEN);
+    strcpy(idx->key, key);
+    idx->length = length;
+    idx->offset = findUnsetBif();
+    tree->insert(*idx);
     
     int spice_count = length / BLOCK_SIZE + 1;
     int i = 0;
     int final = BIF_END;
     vector<uint32_t> v;
-    v.push_back(idx.offset);
+    v.push_back(idx->offset);
     for(i = 0; i < spice_count - 1; i++) {
         v.push_back(findUnsetBif());
     }
@@ -76,18 +73,13 @@ void Domain::set(const char *key, const byte *data, const size_t length){/*{{{*/
     }
 }/*}}}*/
 void Domain::remove(const char *key) {/*{{{*/
-    uint32_t idx_offset = locate(key);
-    struct index idx;
-    if(IDX_NOT_FOUND == idx_offset) {
+    class index* idx = locate(key);
+    if(idx == NULL) { //waiting for handling
         return;
     }
-    fseek(idxfs, IDX_SIZE * idx_offset, SEEK_SET);
-    fread(&idx, IDX_SIZE, 1, idxfs);
-    fseek(idxfs, (-1) * IDX_SIZE , SEEK_CUR);
-    idx.used = 0;
-    fwrite(&idx, IDX_SIZE, 1, idxfs);
-    fflush(idxfs);
-    uint32_t bif_offset = idx.offset;
+    idx->used = 0;
+    uint32_t bif_offset = idx->offset;
+    tree->insert(*idx);
     for( ; ; ) {
         uint32_t old_bif_offset = bif_offset;
         bif_offset = readBif(bif_offset);
@@ -109,21 +101,10 @@ void Domain::readFiles() {/*{{{*/
         idxfs = fopen(idxpath, "rb+");
         dmdfs = fopen(dmdpath, "rb+");
     }
-    tree = new BTree<int, 1000>(idxfs);
+    tree = new BTree<class index, 1000>(idxfs);
     free(idxpath);
     free(bifpath);
     free(dmdpath);
-}/*}}}*/
-uint32_t Domain::findUnsetIdx() {/*{{{*/
-    struct index idx;
-    int i = 0;
-    fseek(idxfs, 0, SEEK_SET);
-    while(fread(&idx, IDX_SIZE, 1, idxfs) == 1) {
-        if(idx.used == 0) { 
-            return ftell(idxfs) / IDX_SIZE - 1;
-        }
-    }
-    return ftell(idxfs) / IDX_SIZE;
 }/*}}}*/
 uint32_t Domain::findUnsetBif() {/*{{{*/
     uint32_t indicator;
@@ -179,23 +160,14 @@ void Domain::eraseBif(uint32_t offset) {/*{{{*/
     fflush(biffs);
 }/*}}}*/
 void Domain::eraseIdx(uint32_t offset) {/*{{{*/
-    struct index idx;
+    class index idx;
     bzero(&idx, IDX_SIZE);
     fseek(idxfs, offset * IDX_SIZE, SEEK_SET);
     fwrite(&idx, IDX_SIZE, 1, idxfs);
     fflush(idxfs);
 }/*}}}*/
-uint32_t Domain::locate(const char *key) {/*{{{*/
-    struct index idx;
-    fseek(idxfs, 0, SEEK_SET);
-    while(fread(&idx, IDX_SIZE, 1, idxfs) == 1) {
-        if(idx.used == 1) {
-            if(strcmp(idx.key, key) == 0) {
-                return ftell(idxfs) / IDX_SIZE - 1;
-            }
-        } else {
-            continue;
-        }
-    }
-    return IDX_NOT_FOUND;
+class index* Domain::locate(const char *key) {/*{{{*/
+    class index idx;
+    strcpy(idx.key, key);
+    return tree->search(idx);
 }/*}}}*/

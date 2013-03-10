@@ -31,10 +31,18 @@ using std::string;
 using std::vector;
 extern int errno;
 typedef unsigned char byte;
-struct index{
+class index{
+public:
     byte used;
     char key[KEY_LEN];
     uint32_t   length;
     uint32_t   offset;
+    bool operator >= (index &i) {
+        return strcmp(key, i.key) >= 0;
+    }
+
+    bool operator == (index &i) {
+        return strcmp(key, i.key) == 0;
+    }
 };
 #endif

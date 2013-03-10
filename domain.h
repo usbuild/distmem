@@ -17,7 +17,7 @@ private:
     FILE *biffs;
     FILE *idxfs;
     FILE *dmdfs;
-    BTree<int, 1000> *tree;
+    BTree<class index, 1000> *tree;
     string dir_path;
     string name;
 
@@ -29,6 +29,6 @@ private:
     uint32_t readBif(uint32_t offset);
     void eraseBif(uint32_t offset);
     void eraseIdx(uint32_t offset);
-    uint32_t locate(const char *key);
+    class index* locate(const char *key);
 };
 #endif
