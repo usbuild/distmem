@@ -2,31 +2,26 @@
 #include <iostream>
 #include <distmem.h>
 #include <btree.h>
+#include <stdio.h>
 using std::memmove;
 using std::memset;
-template<typename T>
-BTreeNode<T>::BTreeNode(int num):size(num), usedSize(0), leaf(true) {
-    this->body = new NodeUnit<T>[size + 1]; 
+template<typename T, int size>
+BTreeNode<T, size>::BTreeNode():usedSize(0){
     memset(this->body, 0, sizeof(NodeUnit<T>) * (size + 1));
 }
 
-template<typename T>
-bool BTreeNode<T>::isFull() {
+template<typename T, int size>
+bool BTreeNode<T, size>::isFull() {
     return this->usedSize == size;
 }
 
-template<typename T>
-bool BTreeNode<T>::isEmpty() {
+template<typename T, int size>
+bool BTreeNode<T, size>::isEmpty() {
     return this->usedSize == 0;
 }
 
-template<typename T>
-bool BTreeNode<T>::isOverHalf() {
-    return this->usedSize > (this->size / 2);
-}
-
-template<typename T>
-int BTreeNode<T>::insert(T t) {
+template<typename T, int size>
+int BTreeNode<T, size>::insert(T t) {
     if(this->isFull()) return 1;
     int pos = search(t);
     NodeUnit<T> *unit = &body[pos];
@@ -36,8 +31,9 @@ int BTreeNode<T>::insert(T t) {
     memcpy(&unit->data, &t, sizeof(T));
     return 0;
 }
-template<typename T>
-int BTreeNode<T>::remove(T t) {
+
+template<typename T, int size>
+int BTreeNode<T, size>::remove(T t) {
     if(this->isEmpty()) return 1;
     int pos = search(t);
     NodeUnit<T> *unit = &body[pos];
@@ -50,8 +46,8 @@ int BTreeNode<T>::remove(T t) {
 }
 
 
-template<typename T>
-int BTreeNode<T>::search(T t) {
+template<typename T, int size>
+int BTreeNode<T, size>::search(T t) {
     int i = 0;
     for (i = 0; i < usedSize; ++i) {//should use binary search
         NodeUnit<T> *unit = &body[i];
@@ -61,135 +57,201 @@ int BTreeNode<T>::search(T t) {
     }
     return i;
 }
-template<typename T>
-bool BTreeNode<T>::isLeaf() {
-    return this->leaf;
+
+template<typename T, int size>
+void BTreeNode<T, size>::dump(NodeUnit<T>* start, int len) {
+    memcpy(this->body, start, (len + 1) * sizeof(NodeUnit<T>));
+    this->usedSize = len;
 }
 
-template<typename T>
-void BTreeNode<T>::setLeaf(bool leaf) {
-    this->leaf = leaf;
-}
-
-template<typename T>
-void BTreeNode<T>::dump(NodeUnit<T>* start, int size) {
-    memcpy(this->body, start, (size + 1) * sizeof(NodeUnit<T>));
-    this->usedSize = size;
-}
-
-template<typename T>
-BTreeNode<T>* BTreeNode<T>::explode() {
+template<typename T, int size>
+BTreeNode<T, size>* BTreeNode<T, size>::explode() {
     int l = this->usedSize / 2 + 1;
     int r = this->usedSize - l;
-    BTreeNode<T>* right = new BTreeNode<T>(this->size);
+    BTreeNode<T, size>* right = BTreeNode<T, size>::newNode();
     right->dump(this->body + l, r);
     this->usedSize = l;
     return right;
 }
 
-template<typename T>
-void BTreeNode<T>::shrink(int size) {
-    this->usedSize -= size;
+template<typename T, int size>
+void BTreeNode<T, size>::shrink(int len) {
+    this->usedSize -= len;
 }
 
-
-
-template<typename T>
-int BTreeNode<T>::length() {
+template<typename T, int size>
+int BTreeNode<T, size>::length() {
     return usedSize;
 }
 
-template<typename T>
-NodeUnit<T>* BTreeNode<T>::get(int i) {
+template<typename T, int size>
+NodeUnit<T>* BTreeNode<T, size>::get(int i) {
     return &body[i];
 }
 
-
-template<typename T>
-BTree<T>::BTree(int num):size(num) { 
-    root = new BTreeNode<T>(size);
-    root->parent = NULL;
-}
-
-template<typename T>
-BTreeNode<T>* BTree<T>::locate(T t) {
-    BTreeNode<T>* node = this->root;
-    NodeUnit<T> *nu;
-    while(true) {
-        if(node->isFull()) {
-            this->explode(node);
-            node = node->parent;
-            continue;
-        }
-        nu = node->get(node->search(t));
-        if(nu->data == t) {
-            return node;
-        } else {
-            if(nu->next == NULL) return node;
-            node = nu->next;
-        }
-    }
-    return node;
-}
-
-template<typename T>
-void BTreeNode<T>::print() {
+template<typename T, int size>
+void BTreeNode<T, size>::print() {
     for (int i = 0; i < this->usedSize; i++) {
         std::cout << this->get(i)->data << "\t";
     }
     std::cout << std::endl;
 }
 
-template<typename T>
-void BTree<T>::print() {
-    this->root->print();
-    for(int i = 0; i <= this->root->length(); ++i) {
-        BTreeNode<T>* t = this->root->get(i)->next;
+
+template<typename T, int size>
+BTree<T, size>::BTree(FILE *file):file(file), nodeNum(0) { 
+    long start = fseek(file, 0, SEEK_END);
+    if(ftell(file) - start == 0) {
+        long i = 0;
+        fwrite(&i, IOFFSET, 1, file);
+    }
+    BTreeNode<T, size>* rootNode = BTreeNode<T, size>::newNode();
+    rootNode->parent = -1;
+
+    setRoot(getNextFreeNode());
+    append(rootNode);
+    delete rootNode;
+}
+
+template<typename T, int size>
+void BTree<T, size>::writeNode(int i, BTreeNode<T, size>* node) {
+    fseek(file, IOFFSET + sizeof(BTreeNode<T, size>) * i, SEEK_SET);
+    fwrite(node, sizeof(node), 1, file);
+}
+
+template<typename T, int size>
+BTreeNode<T, size>* BTree<T, size>::readNode(int i) {
+    BTreeNode<T, size>* node = BTreeNode<T, size>::newNode();
+    fseek(file, IOFFSET + sizeof(BTreeNode<T, size>) * i, SEEK_SET);
+    fread(node, sizeof(BTreeNode<T, size>), 1, file);
+    return node;
+}
+
+template<typename T, int size>
+BTreeNode<T, size>* BTreeNode<T, size>::newNode() {
+    BTreeNode<T, size>* node = (BTreeNode<T, size>*) new BTreeNode<T, size>();
+
+    NodeUnit<T> unit;
+    unit.next = -1;
+    for (int i = 0; i < size + 1; i++) {
+        memcpy(node->body + i, &unit, sizeof(unit));
+    }
+    return node;
+}
+
+template<typename T, int size>
+void BTree<T, size>::append(BTreeNode<T, size>* node) {
+    writeNode(getNextFreeNode(), node);
+    ++nodeNum;
+}
+
+template<typename T, int size>
+long BTree<T, size>::locate(T t) {
+    BTreeNode<T, size>* node;
+    long temp = root;
+    NodeUnit<T> *nu;
+    while(true) {
+        node = readNode(temp);
+        if(node->isFull()) {
+            this->explode(temp);
+            temp = node->parent;
+            delete node;
+            continue;
+        }
+
+        nu = node->get(node->search(t));
+        if(nu->data == t) {
+            delete node;
+            return temp;
+        } else {
+            if(nu->next == -1) {
+                delete node;
+                return temp;
+            }
+            temp = nu->next;
+            delete node;
+        }
+    }
+}
+
+template<typename T, int size>
+void BTree<T, size>::print() {
+    BTreeNode<T, size>* node = readNode(this->root);
+    node->print();
+    for(int i = 0; i <= node->length(); ++i) {
+        BTreeNode<T, size>* t = readNode(node->get(i)->next);
         if(t != NULL) {
             t->print();
         }
     }
 }
 
-template<typename T>
-T* BTree<T>::search(T t) {
-    BTreeNode<T>* node = this->locate(t);
+template<typename T, int size>
+T* BTree<T, size>::search(T t) {
+    long pos = this->locate(t);
+    BTreeNode<T, size>* node = readNode(pos);
     NodeUnit<T>* unit = node->get(node->search(t));
     if(unit->data == t) return &unit->data;
     return NULL;
 }
 
-template<typename T>
-int BTree<T>::insert(T t) {
-    BTreeNode<T>* node = this->locate(t);
+template<typename T, int size>
+int BTree<T, size>::insert(T t) {
+    long pos = this->locate(t);
+    BTreeNode<T, size>* node = readNode(pos);
     NodeUnit<T>* unit = node->get(node->search(t));
     if(unit->data == t) {
         memcpy(&unit->data, &t, sizeof(T));
     } else {
         node->insert(t);
     }
+    writeNode(pos, node);
+    delete node;
     return 1;
 }
 
-template<typename T>
-void BTree<T>::explode(BTreeNode<T>* node) {
-    BTreeNode<T>* rNode = node->explode();
+template<typename T, int size>
+void BTree<T, size>::setRoot(long i) {
+    this->root = i;
+}
+
+template<typename T, int size>
+long BTree<T, size>::getNextFreeNode() {
+    return nodeNum;
+}
+
+template<typename T, int size>
+void BTree<T, size>::explode(long pos) {
+
+    BTreeNode<T, size>* node = readNode(pos);
+    BTreeNode<T, size>* rNode = node->explode();
     NodeUnit<T>* midUnit = node->get(node->length() - 1);
-    //resize
     node->shrink(1);
-    if(node->parent == NULL) {
-        root = new BTreeNode<T>(this->size);
+
+    if(node->parent == -1) {
+        BTreeNode<T, size>* rootNode = BTreeNode<T, size>::newNode();
+        setRoot(getNextFreeNode());
+        append(rootNode);
         node->parent = root;
     }
+    writeNode(pos, node);
     rNode->parent = node->parent;
-    node->parent->insert(midUnit->data);
-    midUnit = node->parent->get(node->parent->search(midUnit->data));
-    midUnit->next = node;
-    (midUnit + 1)->next = rNode;
+    BTreeNode<T, size>* pNode = readNode(node->parent);
+    pNode->insert(midUnit->data);
+    midUnit = pNode->get(pNode->search(midUnit->data));
+    midUnit->next = pos;
+    (midUnit + 1)->next = getNextFreeNode();
+
+    writeNode(getNextFreeNode(), rNode);
+    writeNode(node->parent, pNode);
+
+    delete node;
+    delete pNode;
+    delete rNode;
 }
 
 
-template<typename T>
-int BTree<T>::remove(T t) {
+template<typename T, int size>
+int BTree<T, size>::remove(T t) {
 
 }

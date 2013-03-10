@@ -1,61 +1,66 @@
 #ifndef __BTREE_H__
 #define __BTREE_H__
 #include <distmem.h>
+#include <stdio.h>
 
-template<typename T>
+template<typename T, int size>
 class BTreeNode;
 
 template<typename T>
 struct NodeUnit{
-    BTreeNode<T>* next;
+    long next;
     T data;
 };
 
-template<typename T>
+template<typename T, int size>
 class BTreeNode 
 {
 private:
-    int size;
     int usedSize;
-    bool leaf;
-    NodeUnit<T>* body;
-
+    NodeUnit<T> body[size + 1];
 
 public:
-    BTreeNode<T>* parent;
-    BTreeNode(int num);
+    long parent;
+    BTreeNode();
     bool isFull(); 
     bool isEmpty();
-    bool isOverHalf();
     int length();
     NodeUnit<T>* get(int i);
     int search(T t);
     int remove(T t);
     int insert(T t); 
     bool isLeaf();
-    void setLeaf(bool leaf);
-    BTreeNode<T>* explode();
-    void dump(NodeUnit<T>* start, int size);
-    void shrink(int size);
+    BTreeNode<T, size>* explode();
+    void dump(NodeUnit<T>* start, int len);
+    void shrink(int len);
     void print();
+    static BTreeNode<T, size>* newNode();
 };
 
 
-template<typename T>
+template<typename T, int size>
 class BTree 
 {
 private:
-    int size;
-    BTreeNode<T> *root;
-    BTreeNode<T>* locate(T t);
-    void explode(BTreeNode<T>* node);
+    int nodeNum;
+    long root;
+    long locate(T t);
+    void explode(long pos);
+    FILE *file;
+    BTreeNode<T, size>* newNode();
+    void append(BTreeNode<T, size>* node);
+    void setRoot(long i);
+    long getNextFreeNode();
 
+#define  IOFFSET sizeof(long)
 public:
-    BTree(int num);
+    BTree(FILE *file);
     T* search(T t);
     int insert(T t);
     int remove(T t);
     void print();
+    void writeNode(int i, BTreeNode<T,size>* node);
+    BTreeNode<T, size>* readNode(int i);
 };
 
 #endif
