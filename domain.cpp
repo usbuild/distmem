@@ -1,4 +1,5 @@
 #include <domain.h>
+#include <btree.hpp>
 Domain::Domain(std::string &str):name(str) {
         dir_path = string(DATA_PATH) +  PATH_SEP + name + PATH_SEP;
         readFiles();
@@ -108,6 +109,7 @@ void Domain::readFiles() {/*{{{*/
         idxfs = fopen(idxpath, "rb+");
         dmdfs = fopen(dmdpath, "rb+");
     }
+    tree = new BTree<int, 1000>(idxfs);
     free(idxpath);
     free(bifpath);
     free(dmdpath);

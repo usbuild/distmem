@@ -1,8 +1,71 @@
+#ifndef __DM_BTREE_HPP__
+#define __DM_BTREE_HPP__
 #include <cstring>
 #include <iostream>
 #include <distmem.h>
-#include <btree.h>
 #include <stdio.h>
+
+template<typename T, int size>
+class BTreeNode;
+
+template<typename T>
+struct NodeUnit{
+    long next;
+    T data;
+};
+
+template<typename T, int size>
+class BTreeNode 
+{
+private:
+    int usedSize;
+    NodeUnit<T> body[size + 1];
+
+public:
+    long parent;
+    BTreeNode();
+    bool isFull(); 
+    bool isEmpty();
+    int length();
+    NodeUnit<T>* get(int i);
+    int search(T &t);
+    int remove(T &t);
+    int insert(T &t); 
+    bool isLeaf();
+    BTreeNode<T, size>* explode();
+    void dump(NodeUnit<T>* start, int len);
+    void shrink(int len);
+    void print();
+    static BTreeNode<T, size>* newNode();
+};
+
+
+template<typename T, int size>
+class BTree 
+{
+private:
+    int nodeNum;
+    long root;
+    long locate(T t);
+    void explode(long pos);
+    FILE *file;
+    BTreeNode<T, size>* newNode();
+    void append(BTreeNode<T, size>* node);
+    void setRoot(long i);
+    long getNextFreeNode();
+
+#define  IOFFSET sizeof(long)
+public:
+    BTree(FILE *file);
+    T* search(T &t);
+    int insert(T &t);
+    int remove(T t);
+    void print();
+    void writeNode(int i, BTreeNode<T,size>* node);
+    BTreeNode<T, size>* readNode(int i);
+};
+
+//---implementation
 using std::memmove;
 using std::memset;
 template<typename T, int size>
@@ -21,7 +84,7 @@ bool BTreeNode<T, size>::isEmpty() {
 }
 
 template<typename T, int size>
-int BTreeNode<T, size>::insert(T t) {
+int BTreeNode<T, size>::insert(T &t) {
     if(this->isFull()) return 1;
     int pos = search(t);
     NodeUnit<T> *unit = &body[pos];
@@ -33,7 +96,7 @@ int BTreeNode<T, size>::insert(T t) {
 }
 
 template<typename T, int size>
-int BTreeNode<T, size>::remove(T t) {
+int BTreeNode<T, size>::remove(T &t) {
     if(this->isEmpty()) return 1;
     int pos = search(t);
     NodeUnit<T> *unit = &body[pos];
@@ -47,7 +110,7 @@ int BTreeNode<T, size>::remove(T t) {
 
 
 template<typename T, int size>
-int BTreeNode<T, size>::search(T t) {
+int BTreeNode<T, size>::search(T &t) {
     int i = 0;
     for (i = 0; i < usedSize; ++i) {//should use binary search
         NodeUnit<T> *unit = &body[i];
@@ -189,7 +252,7 @@ void BTree<T, size>::print() {
 }
 
 template<typename T, int size>
-T* BTree<T, size>::search(T t) {
+T* BTree<T, size>::search(T &t) {
     long pos = this->locate(t);
     BTreeNode<T, size>* node = readNode(pos);
     NodeUnit<T>* unit = node->get(node->search(t));
@@ -198,7 +261,7 @@ T* BTree<T, size>::search(T t) {
 }
 
 template<typename T, int size>
-int BTree<T, size>::insert(T t) {
+int BTree<T, size>::insert(T &t) {
     long pos = this->locate(t);
     BTreeNode<T, size>* node = readNode(pos);
     NodeUnit<T>* unit = node->get(node->search(t));
@@ -260,3 +323,4 @@ template<typename T, int size>
 int BTree<T, size>::remove(T t) {
 
 }
+#endif

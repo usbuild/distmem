@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <distmem.h>
+#include <btree.hpp>
 class Domain
 {
 public:
@@ -16,6 +17,7 @@ private:
     FILE *biffs;
     FILE *idxfs;
     FILE *dmdfs;
+    BTree<int, 1000> *tree;
     string dir_path;
     string name;
 
