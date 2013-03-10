@@ -1,5 +1,4 @@
 #include <domain.h>
-#include <btree.hpp>
 Domain::Domain(std::string &str):name(str) {
         dir_path = string(DATA_PATH) +  PATH_SEP + name + PATH_SEP;
         readFiles();
@@ -48,7 +47,7 @@ void Domain::set(const char *key, const byte *data, const size_t length){/*{{{*/
     strcpy(idx->key, key);
     idx->length = length;
     idx->offset = findUnsetBif();
-    tree->insert(*idx);
+    insert(idx);
     
     int spice_count = length / BLOCK_SIZE + 1;
     int i = 0;
@@ -79,7 +78,7 @@ void Domain::remove(const char *key) {/*{{{*/
     }
     idx->used = 0;
     uint32_t bif_offset = idx->offset;
-    tree->insert(*idx);
+    insert(idx);
     for( ; ; ) {
         uint32_t old_bif_offset = bif_offset;
         bif_offset = readBif(bif_offset);
@@ -167,7 +166,20 @@ void Domain::eraseIdx(uint32_t offset) {/*{{{*/
     fflush(idxfs);
 }/*}}}*/
 class index* Domain::locate(const char *key) {/*{{{*/
-    class index idx;
+    class index idx, *pidx;
     strcpy(idx.key, key);
-    return tree->search(idx);
+    // use for  cache result
+    pidx = cache.get(idx);
+    if(pidx == NULL) {
+        pidx = tree->search(idx);
+        if(pidx != NULL) {
+            cache.set(*pidx);
+        }
+    }
+    return pidx;
 }/*}}}*/
+
+void Domain::insert(class index *idx) {
+    cache.set(*idx);
+    tree->insert(*idx);
+}

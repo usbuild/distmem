@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <distmem.h>
 #include <btree.hpp>
+#include <cache.hpp>
 class Domain
 {
 public:
@@ -18,6 +19,7 @@ private:
     FILE *idxfs;
     FILE *dmdfs;
     BTree<class index, 1000> *tree;
+    Cache<class index, 3> cache;
     string dir_path;
     string name;
 
@@ -30,5 +32,6 @@ private:
     void eraseBif(uint32_t offset);
     void eraseIdx(uint32_t offset);
     class index* locate(const char *key);
+    void insert(class index *idx);
 };
 #endif
