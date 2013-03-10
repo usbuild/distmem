@@ -73,7 +73,7 @@ void BTreeNode<T>::setLeaf(bool leaf) {
 
 template<typename T>
 void BTreeNode<T>::dump(NodeUnit<T>* start, int size) {
-    memcpy(this->body, start, size * sizeof(NodeUnit<T>));
+    memcpy(this->body, start, (size + 1) * sizeof(NodeUnit<T>));
     this->usedSize = size;
 }
 
@@ -108,7 +108,7 @@ NodeUnit<T>* BTreeNode<T>::get(int i) {
 template<typename T>
 BTree<T>::BTree(int num):size(num) { 
     root = new BTreeNode<T>(size);
-    root->parent = root;
+    root->parent = NULL;
 }
 
 template<typename T>
@@ -152,10 +152,10 @@ void BTree<T>::print() {
 }
 
 template<typename T>
-NodeUnit<T>* BTree<T>::search(T t) {
+T* BTree<T>::search(T t) {
     BTreeNode<T>* node = this->locate(t);
     NodeUnit<T>* unit = node->get(node->search(t));
-    if(unit->data == t) return unit;
+    if(unit->data == t) return &unit->data;
     return NULL;
 }
 
@@ -177,7 +177,7 @@ void BTree<T>::explode(BTreeNode<T>* node) {
     NodeUnit<T>* midUnit = node->get(node->length() - 1);
     //resize
     node->shrink(1);
-    if(node->parent == this->root) {
+    if(node->parent == NULL) {
         root = new BTreeNode<T>(this->size);
         node->parent = root;
     }

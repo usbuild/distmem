@@ -52,7 +52,7 @@ private:
 
 public:
     BTree(int num);
-    NodeUnit<T>* search(T t);
+    T* search(T t);
     int insert(T t);
     int remove(T t);
     void print();
