@@ -27,7 +27,7 @@ int BTreeNode<T, size>::insert(T t) {
     NodeUnit<T> *unit = &body[pos];
     memmove(unit + 1, unit, (usedSize - pos) * sizeof(NodeUnit<T>));
     ++usedSize;
-    unit->next = NULL;
+    unit->next = -1;
     memcpy(&unit->data, &t, sizeof(T));
     return 0;
 }
@@ -100,23 +100,25 @@ void BTreeNode<T, size>::print() {
 
 template<typename T, int size>
 BTree<T, size>::BTree(FILE *file):file(file), nodeNum(0) { 
-    long start = fseek(file, 0, SEEK_END);
-    if(ftell(file) - start == 0) {
+    fseek(file, 0, SEEK_END);
+    if(ftell(file) == 0) {
+        BTreeNode<T, size>* rootNode = BTreeNode<T, size>::newNode();
+        rootNode->parent = -1;
+        setRoot(getNextFreeNode());
+        append(rootNode);
+        delete rootNode;
+    } else {
         long i = 0;
-        fwrite(&i, IOFFSET, 1, file);
+        fseek(file, 0, SEEK_SET);
+        fread(&i, IOFFSET, 1, file);
+        setRoot(i);
     }
-    BTreeNode<T, size>* rootNode = BTreeNode<T, size>::newNode();
-    rootNode->parent = -1;
-
-    setRoot(getNextFreeNode());
-    append(rootNode);
-    delete rootNode;
 }
 
 template<typename T, int size>
 void BTree<T, size>::writeNode(int i, BTreeNode<T, size>* node) {
     fseek(file, IOFFSET + sizeof(BTreeNode<T, size>) * i, SEEK_SET);
-    fwrite(node, sizeof(node), 1, file);
+    fwrite(node, sizeof(BTreeNode<T, size>), 1, file);
 }
 
 template<typename T, int size>
@@ -179,10 +181,10 @@ void BTree<T, size>::print() {
     BTreeNode<T, size>* node = readNode(this->root);
     node->print();
     for(int i = 0; i <= node->length(); ++i) {
-        BTreeNode<T, size>* t = readNode(node->get(i)->next);
-        if(t != NULL) {
-            t->print();
-        }
+        long next = node->get(i)->next;
+        if(next == -1) break;
+        BTreeNode<T, size>* t = readNode(next);
+        t->print();
     }
 }
 
@@ -213,6 +215,8 @@ int BTree<T, size>::insert(T t) {
 template<typename T, int size>
 void BTree<T, size>::setRoot(long i) {
     this->root = i;
+    fseek(file, 0, SEEK_SET);
+    fwrite(&this->root, IOFFSET, 1, file);
 }
 
 template<typename T, int size>
@@ -231,6 +235,7 @@ void BTree<T, size>::explode(long pos) {
     if(node->parent == -1) {
         BTreeNode<T, size>* rootNode = BTreeNode<T, size>::newNode();
         setRoot(getNextFreeNode());
+        rootNode->parent = -1;
         append(rootNode);
         node->parent = root;
     }
@@ -242,7 +247,7 @@ void BTree<T, size>::explode(long pos) {
     midUnit->next = pos;
     (midUnit + 1)->next = getNextFreeNode();
 
-    writeNode(getNextFreeNode(), rNode);
+    append(rNode);
     writeNode(node->parent, pNode);
 
     delete node;
