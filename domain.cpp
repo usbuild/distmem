@@ -38,6 +38,7 @@ void Domain::get(const char *key, byte* &data, size_t &length) { /*{{{*/
         length = idx->length;
 }/*}}}*/
 void Domain::set(const char *key, const byte *data, const size_t length){/*{{{*/
+
     class index* idx = locate(key);
     if(idx == NULL) {
         idx = new class index();
@@ -48,7 +49,7 @@ void Domain::set(const char *key, const byte *data, const size_t length){/*{{{*/
     idx->length = length;
     idx->offset = findUnsetBif();
     insert(idx);
-    
+
     int spice_count = length / BLOCK_SIZE + 1;
     int i = 0;
     int final = BIF_END;
@@ -70,6 +71,7 @@ void Domain::set(const char *key, const byte *data, const size_t length){/*{{{*/
         writeDmd(data + write_len, length - write_len, v[i]);
         write_len += BLOCK_SIZE;
     }
+
 }/*}}}*/
 void Domain::remove(const char *key) {/*{{{*/
     class index* idx = locate(key);
@@ -127,14 +129,13 @@ void Domain::writeDmd(const byte *data, const size_t length, const uint32_t offs
 
     fseek(dmdfs, offset * BLOCK_SIZE, SEEK_SET);
     fwrite(data, write_len, 1, dmdfs);
-    fflush(dmdfs);
     if(ftell(dmdfs) % BLOCK_SIZE != 0) {//并没有填充完
 
         fseek(dmdfs, BLOCK_SIZE - ftell(dmdfs) % BLOCK_SIZE - 1, SEEK_CUR);
         byte zero = 0;
         fwrite(&zero, 1, 1, dmdfs);
-        fflush(dmdfs);
     }
+    fflush(dmdfs);
 }/*}}}*/
 void Domain::readDmd(byte* data, const uint32_t length, uint32_t offset) {/*{{{*/
     byte buff[BLOCK_SIZE];

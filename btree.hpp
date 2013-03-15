@@ -182,6 +182,7 @@ template<typename T, int size>
 void BTree<T, size>::writeNode(int i, BTreeNode<T, size>* node) {
     fseek(file, IOFFSET + sizeof(BTreeNode<T, size>) * i, SEEK_SET);
     fwrite(node, sizeof(BTreeNode<T, size>), 1, file);
+    fflush(file);
 }
 
 template<typename T, int size>

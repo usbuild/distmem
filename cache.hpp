@@ -31,13 +31,14 @@ T* Cache<T, size>::get(T &t) {
     if(pos == -1) return NULL;
     T temp;
     memcpy(&temp, &data[pos], sizeof(T));
-    memmove(data + 1, data, sizeof(T) * pos);
+    memmove(&data[1], &data[0], sizeof(T) * pos);
     memcpy(&data[0], &temp, sizeof(T));
     return &data[0];
 }
 
 template<typename T, int size>
 void Cache<T, size>::set(T &t) {
+    return;
     if(get(t) == NULL) {
         if(used != size) ++used;
         memcpy(&data[used - 1], &t, sizeof(T));
