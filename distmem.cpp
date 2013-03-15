@@ -5,7 +5,6 @@
 #include <handler.h>
 #include <unistd.h>
 #include <signal.h>
-//#define DEBUG
 
 int main() {
 

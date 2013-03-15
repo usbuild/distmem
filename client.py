@@ -33,8 +33,17 @@ sock.connect(('localhost', 4327))
 param1 = []
 param2 = ['use', 'get', 'del']
 param3 = ['set']
+print """ 
+==============================================
+		DistMem Console
+
+Supported command: use, get, del, set
+
+==============================================
+"""
 while True:
-    s = raw_input("DistMem:>");
+    s = raw_input("DistMem: >");
+    if len(s.strip()) == 0: continue;
     if s == "exit": break;
     s = s.lstrip()
     sa = s.split()
@@ -91,7 +100,7 @@ while True:
     time.sleep(0.05)
     re = sock.recv(2048)
     if re[0] in ('+', '-'):
-        print re[1:]
+        print re[1:],
     elif re[0] == '$':
         resp_len = int(re[1:re.find("\r\n")])
         if resp_len == -1:

@@ -3,8 +3,8 @@ CXXFLAGS= -g -I.
 TARGET=distmem
 OBJ=distmem.cpp domain.cpp server.cpp connection.cpp handler.cpp
 $(TARGET): $(OBJ)
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) -DDEBUG $^ -o $@
 release: $(OBJ)
-	$(CXX) $(CXXFLAGS) $^ -O2 -o $(TARGET)
+	$(CXX) $(CXXFLAGS)  $^ -O2 -o $(TARGET)
 clean:
 	-rm $(TARGET)
