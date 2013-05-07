@@ -3,6 +3,17 @@
 import socket  
 import time  
 import re
+# define some terminal colors
+
+def pred(text):
+    return "\033[1;31;40m%s\033[0m" % text
+
+def pgreen(text):
+    return "\033[32m%s\033[0m" % text
+
+def pyellow(text):
+    return "\033[33m%s\033[0m" % text
+
 r = re.compile(r'(?<!\\),|(?<=\\\\),')
 def getFlag(var):
     d = {'float':'f', 'int':'i', 'str':'s', 'list':'l'}
@@ -42,7 +53,7 @@ Supported command: use, get, del, set
 ==============================================
 """
 while True:
-    s = raw_input("DistMem: >");
+    s = raw_input("DistMem:> ");
     if len(s.strip()) == 0: continue;
     if s == "exit": break;
     s = s.lstrip()
@@ -61,10 +72,10 @@ while True:
             exec("data = " + p[-1]);#to assign data to the value
             p[-1] = data
         except:
-            print 'Syntax Error'
+            print pred('Syntax Error')
             continue
     else:
-        print 'Unknown Command'
+        print pred("Unknown Command")
         continue
 
     request = "*" + str(len(p)) + "\r\n"
@@ -93,7 +104,7 @@ while True:
             request += "$" + str(len(data_str) + 1) + "\r\n"
             request += getFlag(data) + data_str + "\r\n"
         else:
-            print 'Unknown Value'
+            print pred('Unknown Value')
             continue
 
     sock.send(request + "\n")
@@ -104,10 +115,10 @@ while True:
     elif re[0] == '$':
         resp_len = int(re[1:re.find("\r\n")])
         if resp_len == -1:
-            print "Not Found"
+            print pred("Not Found")
             continue
         data_start = re.find("\r\n") + 2;
         data = re[data_start:data_start + resp_len]
         data = parseCMD(data)
-        print "("+type(data).__name__+")", data
+        print "(" + pyellow(type(data).__name__) + ")", pgreen(data)
 sock.close()
