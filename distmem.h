@@ -19,7 +19,7 @@
 #define KEY_LEN     256
 #define MAX_LEN     1   //to save the last block offset
 #define OFFSET      4
-#define IDX_SIZE    sizeof(struct index)
+#define IDX_SIZE    sizeof(Index)
 #define BIF_SIZE    sizeof(uint32_t)
 #define BIF_END     0xfffffffe
 #define BIF_NOT_USE 0xffffffff
@@ -31,17 +31,17 @@ using std::string;
 using std::vector;
 extern int errno;
 typedef unsigned char byte;
-class index{
+class Index{
 public:
     byte used;
     char key[KEY_LEN];
     uint32_t   length;
     uint32_t   offset;
-    bool operator >= (index &i) {
+    bool operator >= (Index &i) {
         return strcmp(key, i.key) >= 0;
     }
 
-    bool operator == (index &i) {
+    bool operator == (Index &i) {
         return strcmp(key, i.key) == 0;
     }
 };

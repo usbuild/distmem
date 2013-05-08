@@ -13,7 +13,7 @@ Domain::~Domain() {
         fclose(dmdfs);
 }
 void Domain::get(const char *key, byte* &data, size_t &length) { /*{{{*/
-        class index* idx = locate(key);
+        Index* idx = locate(key);
         if(idx == NULL || idx->used == 0) {
             data = NULL;
             length = 0;
@@ -39,9 +39,9 @@ void Domain::get(const char *key, byte* &data, size_t &length) { /*{{{*/
 }/*}}}*/
 void Domain::set(const char *key, const byte *data, const size_t length){/*{{{*/
 
-    class index* idx = locate(key);
+    Index* idx = locate(key);
     if(idx == NULL) {
-        idx = new class index();
+        idx = new Index();
     }
     idx->used = 1;
     bzero(idx->key, KEY_LEN);
@@ -74,7 +74,7 @@ void Domain::set(const char *key, const byte *data, const size_t length){/*{{{*/
 
 }/*}}}*/
 void Domain::remove(const char *key) {/*{{{*/
-    class index* idx = locate(key);
+    Index* idx = locate(key);
     if(idx == NULL) { //waiting for handling
         return;
     }
@@ -102,7 +102,7 @@ void Domain::readFiles() {/*{{{*/
         idxfs = fopen(idxpath, "rb+");
         dmdfs = fopen(dmdpath, "rb+");
     }
-    tree = new BTree<class index, 1000>(idxfs);
+    tree = new BTree<Index, 1000>(idxfs);
     free(idxpath);
     free(bifpath);
     free(dmdpath);
@@ -160,14 +160,14 @@ void Domain::eraseBif(uint32_t offset) {/*{{{*/
     fflush(biffs);
 }/*}}}*/
 void Domain::eraseIdx(uint32_t offset) {/*{{{*/
-    class index idx;
+    Index idx;
     bzero(&idx, IDX_SIZE);
     fseek(idxfs, offset * IDX_SIZE, SEEK_SET);
     fwrite(&idx, IDX_SIZE, 1, idxfs);
     fflush(idxfs);
 }/*}}}*/
-class index* Domain::locate(const char *key) {/*{{{*/
-    class index idx, *pidx;
+Index* Domain::locate(const char *key) {/*{{{*/
+    Index idx, *pidx;
     strcpy(idx.key, key);
     // use for  cache result
     pidx = cache.get(idx);
@@ -180,7 +180,7 @@ class index* Domain::locate(const char *key) {/*{{{*/
     return pidx;
 }/*}}}*/
 
-void Domain::insert(class index *idx) {
+void Domain::insert(Index *idx) {
     cache.set(*idx);
     tree->insert(*idx);
 }
