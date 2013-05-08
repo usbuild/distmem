@@ -1,5 +1,6 @@
 #include <handler.h>
 #include <domain.h>
+#include <pthread.h>
 #define LINE_LEN 2048
 void Handler::handle() {
     int fd = this->conn->getClientFd();
@@ -46,7 +47,7 @@ void Handler::handle() {
             }
         }
     }
-    exit(0);
+    pthread_exit(0);
 }
 
 void Handler::handleSet(const char *key, const char *data, size_t length) {

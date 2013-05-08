@@ -5,6 +5,15 @@
 #include <handler.h>
 #include <unistd.h>
 #include <signal.h>
+#include <pthread.h>
+
+static void *
+thread_start(void *arg) {
+    Connection *conn = (Connection*)arg;
+    Handler(conn).handle();
+    conn->close();
+    delete conn;
+}
 
 int main() {
 
@@ -27,15 +36,11 @@ int main() {
     server.start();
     Connection *conn;
     signal(SIGCHLD, SIG_IGN);
+
+    pthread_t p;
     for( ; ; ) {
         conn = server.getConnection();
-        pid_t pid = fork();
-        if(pid != 0) continue;
-        if(conn == NULL) continue;
-        Handler handler(conn);
-        handler.handle();
-        conn->close();
-        delete conn;
+        pthread_create(&p, NULL, thread_start, conn);
     }
     return 0;
 }

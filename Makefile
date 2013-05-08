@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS= -g -I.
+CXXFLAGS= -g -I. -pthread
 TARGET=distmem
 OBJ=distmem.cpp domain.cpp server.cpp connection.cpp handler.cpp
 $(TARGET): $(OBJ)
